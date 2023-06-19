@@ -103,7 +103,7 @@ const SignupComponent = () => {
   return (
     <div className='Contain'>
       <div className='icon'>
-        <GptIcon />
+        {/* <GptIcon /> */}
       </div>
 
       {
@@ -145,14 +145,14 @@ const SignupComponent = () => {
                   </div>
 
                   <div className="extra">
-                    <div className="divide">
+                  {/* <div className="divide">
                       <span>OR</span>
                     </div>
 
                     <div className="btns" id='options'>
                       <button onClick={googleAuth}><Google /> Continue with Google</button>
                       <button><Microsoft /> Continue with Microsoft Account</button>
-                    </div>
+                    </div>*/}
 
                   </div>
                 </div>

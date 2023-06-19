@@ -45,7 +45,7 @@ const RegisterPendings = ({ _id }) => {
   return (
     <div className='Contain'>
       <div className='icon'>
-        <GptIcon />
+        {/*<GptIcon />*/}
       </div>
 
       <h1>Tell us about you</h1>

@@ -93,7 +93,7 @@ const ForgotComponent = ({ isRequest, userId, secret }) => {
     return (
         <div className='Contain'>
             <div className='icon'>
-                <GptIcon />
+                {/*<GptIcon />*/}
             </div>
 
             {

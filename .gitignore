@@ -28,3 +28,6 @@ client/*.local
 server/.env
 server/node_modules
 server/dist
+
+# Local Netlify folder
+.netlify

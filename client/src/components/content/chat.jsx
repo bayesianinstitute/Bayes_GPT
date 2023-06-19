@@ -5,6 +5,7 @@ import React, {
 } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { GptIcon } from '../../assets'
+
 import { insertNew } from '../../redux/messages'
 import './style.scss'
 
@@ -111,7 +112,9 @@ const Chat = forwardRef(({ error }, ref) => {
 
             <div className="res">
               <div className='icon'>
-                <GptIcon />
+                {/*<GptIcon />*/}
+             
+
                 {error && <span>!</span>}
               </div>
               <div className='txt'>

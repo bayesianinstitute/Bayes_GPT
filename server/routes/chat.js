@@ -46,7 +46,7 @@ const CheckUser = async (req, res, next) => {
 }
 
 const configuration = new Configuration({
-    organization: process.env.OPENAI_ORGANIZATION,
+    // organization: process.env.OPENAI_ORGANIZATION,
     apiKey: process.env.OPENAI_API_KEY
 })
 
@@ -65,13 +65,14 @@ router.post('/', CheckUser, async (req, res) => {
         response.openai = await openai.createCompletion({
             model: "text-davinci-003",
             prompt: prompt,
-            temperature: 0,
+            temperature: 0.7,
             max_tokens: 100,
             top_p: 1,
             frequency_penalty: 0.2,
             presence_penalty: 0,
+        
         });
-
+ 
         if (response?.openai?.data?.choices?.[0]?.text) {
             response.openai = response.openai.data.choices[0].text
             let index = 0
