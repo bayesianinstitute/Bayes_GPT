@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import { GptIcon } from "../assets";
+import {RobotIcon} from "../assets";
 import { LoginComponent } from "../components";
 import { setLoading } from "../redux/loading";
 import "./style.scss";
@@ -41,7 +42,8 @@ const Login = () => {
         ) : (
           <div className="suggection">
             <div>
-              <GptIcon />
+              {/*<GptIcon />*/}
+              <RobotIcon />
             </div>
 
             <div>
