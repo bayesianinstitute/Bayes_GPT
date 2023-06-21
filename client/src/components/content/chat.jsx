@@ -114,6 +114,8 @@ const Chat = forwardRef(({ error }, ref) => {
 
             <div className="res">
               <div className='icon'>
+                <RobotIcon />
+
                 {/*<GptIcon />*/}
              
 

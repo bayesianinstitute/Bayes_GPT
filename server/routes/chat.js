@@ -10,8 +10,6 @@ dotnet.config();
 let router = Router();
 let conversationMemory = {};
 
-
-// Middleware to check if user is authenticated
 const CheckUser = async (req, res, next) => {
   jwt.verify(req.cookies?.userToken, process.env.JWT_PRIVATE_KEY, async (err, decoded) => {
     if (decoded) {
@@ -56,14 +54,13 @@ router.get('/', (req, res) => {
   res.send("Welcome to chatGPT api v1");
 });
 
-// Endpoint for creating a new chat
 router.post('/', CheckUser, async (req, res) => {
   const { prompt, userId } = req.body;
 
   let response = {};
 
   try {
-    const conversation = conversationMemory[userId] || []; //creating memory
+    const conversation = conversationMemory[userId] || [];
     conversation.push(prompt);
     conversationMemory[userId] = conversation;
 
@@ -110,8 +107,6 @@ router.post('/', CheckUser, async (req, res) => {
     }
   }
 });
-
-// Endpoint for updating an existing chat
 
 router.put('/', CheckUser, async (req, res) => {
   const { prompt, userId, chatId } = req.body;
@@ -166,8 +161,6 @@ router.put('/', CheckUser, async (req, res) => {
   }
 });
 
-// Endpoint for retrieving a saved chat
-
 router.get('/saved', CheckUser, async (req, res) => {
   const { userId } = req.body;
   const { chatId = null } = req.query;
@@ -199,8 +192,6 @@ router.get('/saved', CheckUser, async (req, res) => {
   }
 });
 
-
-// Endpoint for retrieving chat history
 router.get('/history', CheckUser, async (req, res) => {
   const { userId } = req.body;
 
@@ -223,8 +214,6 @@ router.get('/history', CheckUser, async (req, res) => {
     }
   }
 });
-
-// Endpoint for deleting all chats
 
 router.delete('/all', CheckUser, async (req, res) => {
   const { userId } = req.body;
