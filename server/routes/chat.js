@@ -4,6 +4,7 @@ import { Configuration, OpenAIApi } from 'openai';
 import user from '../helpers/user.js';
 import jwt from 'jsonwebtoken';
 import chat from "../helpers/chat.js";
+import { getChatId } from '../helpers/chat.js';
 
 dotnet.config();
 
@@ -14,6 +15,8 @@ const CheckUser = async (req, res, next) => {
   jwt.verify(req.cookies?.userToken, process.env.JWT_PRIVATE_KEY, async (err, decoded) => {
     if (decoded) {
       let userData = null;
+      // console.log("chatId",chatId);
+      // const chatId = req.body.chatId; // Extract the chatId from the request body
 
       try {
         userData = await user.checkUserFound(decoded);
@@ -32,6 +35,8 @@ const CheckUser = async (req, res, next) => {
       } finally {
         if (userData) {
           req.body.userId = userData._id;
+          // req.body.chatId = chatId; 
+          // console.log("Check the user id and chatid",req.body.userId, req.body.chatId);
           next();
         }
       }
@@ -55,23 +60,31 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', CheckUser, async (req, res) => {
-  const { prompt, userId } = req.body;
+  const { prompt, userId,chatId } = req.body;
 
   let response = {};
 
   try {
+    console.log("chatid from h", getChatId()); // Access chatId using the getter function
+    chatId=getChatId();
+
     const conversation = conversationMemory[userId] || [];
     conversation.push(prompt);
     conversationMemory[userId] = conversation;
+    console.log("chatId in posr : ",chatId);
+    response.openai = await openai.createChatCompletion({
+      model: "gpt-3.5-turbo",
+      prompt: prompt,
+      
 
-    response.openai = await openai.createCompletion({
-      model: "text-davinci-003",
-      prompt: conversation.join("\n"),
-      temperature: 0.7,
-      max_tokens: 900,
-      top_p: 1,
-      frequency_penalty: 0.2,
-      presence_penalty: 0
+      // messages: [{ role: 'user', content: prompt }],
+
+      // prompt: conversation.join("\n"),
+      // temperature: 0.7,
+      // max_tokens: 900,
+      // top_p: 1,
+      // frequency_penalty: 0.2,
+      // presence_penalty: 0
     });
 
     if (response?.openai?.data?.choices?.[0]?.text) {
@@ -87,9 +100,10 @@ router.post('/', CheckUser, async (req, res) => {
         }
         index++;
       }
-      response.db = await chat.newResponse(prompt, response, userId);
+      response.db = await chat.newResponse(prompt, response, userId,chatId);
     }
   } catch (err) {
+    console.log("error",err);
     res.status(500).json({
       status: 500,
       message: err
@@ -114,18 +128,22 @@ router.put('/', CheckUser, async (req, res) => {
   let response = {};
 
   try {
-    const conversation = conversationMemory[chatId] || [];
-    conversation.push(prompt);
-    conversationMemory[chatId] = conversation;
+    chatId=getChatId();
 
-    response.openai = await openai.createCompletion({
-      model: "text-davinci-003",
-      prompt: conversation.join("\n"),
-      temperature: 0.7,
-      max_tokens: 100,
-      top_p: 1,
-      frequency_penalty: 0.2,
-      presence_penalty: 0
+    const conversation = conversationMemory[userId] || [];
+    conversation.push(prompt);
+    conversationMemory[userId] = conversation;
+
+    response.openai = await openai.createChatCompletion({
+      model: "gpt-3.5-turbo",
+      prompt: prompt
+      // messages: [{ role: 'user', content: prompt }],
+      
+      // temperature: 0.7,
+      // max_tokens: 100,
+      // top_p: 1,
+      // frequency_penalty: 0.2,
+      // presence_penalty: 0
     });
 
     if (response?.openai?.data?.choices?.[0]?.text) {

@@ -2,10 +2,15 @@ import { db } from "../db/connection.js";
 import collections from "../db/collections.js";
 import { ObjectId } from "mongodb";
 
+let chatId; // Declare the chatId variable outside the exported object
+
 export default {
     newResponse: (prompt, { openai }, userId) => {
         return new Promise(async (resolve, reject) => {
-            let chatId = new ObjectId().toHexString()
+            chatId = new ObjectId().toHexString()
+            console.log("helper chatId",chatId)
+            console.log("helper userId",userId)
+
             let res = null
             try {
                 await db.collection(collections.CHAT).createIndex({ user: 1 }, { unique: true })
@@ -42,6 +47,7 @@ export default {
             } finally {
                 if (res) {
                     res.chatId = chatId
+                    console.log("res helpper",res.chatId)
                     resolve(res)
                 } else {
                     reject({ text: "DB gets something wrong" })
@@ -54,6 +60,7 @@ export default {
             let res = await db.collection(collections.CHAT).updateOne({
                 user: userId.toString(),
                 'data.chatId': chatId
+        
             }, {
                 $push: {
                     'data.$.chats': {
@@ -153,3 +160,7 @@ export default {
         })
     }
 }
+export function getChatId() {
+    return chatId;
+  }
+  
