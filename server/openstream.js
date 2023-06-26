@@ -1,36 +1,37 @@
 import { Configuration, OpenAIApi } from 'openai'
 
-
 // Define conversation messages outside the function
 let conversation = [
   { role: 'system', content: 'You are a helpful assistant.' },
 ];
 
+const configuration = new Configuration({
+  apiKey: "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",
+});
+const openai = new OpenAIApi(configuration);
 
-
-async function chatWithAssistant(userInput) {
-  const configuration = new Configuration({
-    apiKey: "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",
-  });
-  const openai = new OpenAIApi(configuration);
-
+function chatWithAssistant(userInput) {
   // Add user input to the conversation
   conversation.push({ role: 'user', content: userInput });
 
-  const chatCompletion = await openai.createChatCompletion({
+  const chatCompletion = openai.createChatCompletion({
     model: "gpt-3.5-turbo",
     messages: conversation,
   });
 
-  // Retrieve assistant's reply
-  const reply = chatCompletion.data.choices[0].message;
-  console.log(reply);
+  chatCompletion.then((response) => {
+    // Retrieve assistant's reply
+    const reply = response.data.choices[0].message;
+    console.log(reply);
 
-  // Add assistant's reply to the conversation
-  conversation.push({ role: 'assistant', content: reply });
+    // Add assistant's reply to the conversation
+    conversation.push({ role: 'assistant', content: reply });
 
-  // Remove the user's input from the conversation if desired
-  // conversation.splice(conversation.length - 2, 1);
+    // Remove the user's input from the conversation if desired
+    // conversation.splice(conversation.length - 2, 1);
+  }).catch((error) => {
+    console.error(error);
+  });
 }
 
 // Example usage
@@ -40,9 +41,8 @@ chatWithAssistant(userInput1);
 const userInput2 = "What is my name?";
 chatWithAssistant(userInput2);
 
-
-const userInput3 = "my friend name is faraz";
+const userInput3 = "my friend's name is faraz";
 chatWithAssistant(userInput3);
 
-const userInput4 = "What is my and my friend name?";
+const userInput4 = "What are my name and my friend's name?";
 chatWithAssistant(userInput4);

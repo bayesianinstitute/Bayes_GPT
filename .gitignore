@@ -31,3 +31,7 @@ server/dist
 
 # Local Netlify folder
 .netlify
+
+
+#testing
+server/tesdting.js

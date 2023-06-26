@@ -4,28 +4,29 @@ import { Configuration, OpenAIApi } from 'openai';
 import user from '../helpers/user.js';
 import jwt from 'jsonwebtoken';
 import chat from "../helpers/chat.js";
-import { getChatId } from '../helpers/chat.js';
+import { getChatId } from "../helpers/chat.js";
 
 dotnet.config();
 
 let router = Router();
 let conversationMemory = {};
+let chatId;
+let conversation = {};
 
 const CheckUser = async (req, res, next) => {
   jwt.verify(req.cookies?.userToken, process.env.JWT_PRIVATE_KEY, async (err, decoded) => {
     if (decoded) {
       let userData = null;
-      // console.log("chatId",chatId);
-      // const chatId = req.body.chatId; // Extract the chatId from the request body
 
       try {
         userData = await user.checkUserFound(decoded);
       } catch (err) {
         if (err?.notExists) {
-          res.clearCookie('userToken').status(405).json({
-            status: 405,
-            message: err?.text
-          });
+          res.clearCookie('userToken')
+            .status(405).json({
+              status: 405,
+              message: err?.text
+            });
         } else {
           res.status(500).json({
             status: 500,
@@ -35,8 +36,6 @@ const CheckUser = async (req, res, next) => {
       } finally {
         if (userData) {
           req.body.userId = userData._id;
-          // req.body.chatId = chatId; 
-          // console.log("Check the user id and chatid",req.body.userId, req.body.chatId);
           next();
         }
       }
@@ -60,122 +59,123 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', CheckUser, async (req, res) => {
-  const { prompt, userId,chatId } = req.body;
+  const { prompt, userId } = req.body;
+  chatId = getChatId();
 
   let response = {};
+  console.log("chatId in router:", chatId);
+
+  let conversation = conversationMemory[userId] || [
+    { role: 'system', content: 'You are a helpful assistant.' },
+  ];
 
   try {
-    console.log("chatid from h", getChatId()); // Access chatId using the getter function
-    chatId=getChatId();
+    conversation.push({ role: 'user', content: prompt });
 
-    const conversation = conversationMemory[userId] || [];
-    conversation.push(prompt);
-    conversationMemory[userId] = conversation;
-    console.log("chatId in posr : ",chatId);
-    response.openai = await openai.createChatCompletion({
+    response = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
-      prompt: prompt,
-      
-
-      // messages: [{ role: 'user', content: prompt }],
-
-      // prompt: conversation.join("\n"),
-      // temperature: 0.7,
-      // max_tokens: 900,
-      // top_p: 1,
-      // frequency_penalty: 0.2,
-      // presence_penalty: 0
+      messages: conversation,
     });
 
-    if (response?.openai?.data?.choices?.[0]?.text) {
-      response.openai = response.openai.data.choices[0].text;
+    if (response.data?.choices?.[0]?.message?.content) {
+      let assistantReply = response.data.choices[0].message.content;
       let index = 0;
-      for (let c of response['openai']) {
+      for (let c of assistantReply) {
         if (index <= 1) {
-          if (c == '\n') {
-            response.openai = response.openai.slice(1, response.openai.length);
+          if (c === '\n') {
+            assistantReply = assistantReply.slice(1);
           }
         } else {
           break;
         }
         index++;
       }
-      response.db = await chat.newResponse(prompt, response, userId,chatId);
+      response.openai = assistantReply;
+      response.db = await chat.newResponse(prompt, response, userId);
     }
   } catch (err) {
-    console.log("error",err);
     res.status(500).json({
       status: 500,
-      message: err
+      message: err,
     });
-  } finally {
-    if (response?.db && response?.openai) {
-      res.status(200).json({
-        status: 200,
-        message: 'Success',
-        data: {
-          _id: response.db['chatId'],
-          content: response.openai
-        }
-      });
-    }
+    return;
+  }
+
+  if (response.db && response.openai) {
+    conversationMemory[userId] = conversation;
+
+    res.status(200).json({
+      status: 200,
+      message: 'Success',
+      data: {
+        _id: response.db['chatId'],
+        content: response.openai,
+      },
+    });
+  } else {
+    res.status(500).json({
+      status: 500,
+      message: 'Incomplete response',
+    });
   }
 });
 
 router.put('/', CheckUser, async (req, res) => {
   const { prompt, userId, chatId } = req.body;
+  console.log("chatId in router:", chatId);
 
   let response = {};
 
+  let conversation = conversationMemory[userId] || [
+    { role: 'system', content: 'You are a helpful assistant.' },
+  ];
+
   try {
-    chatId=getChatId();
-
-    const conversation = conversationMemory[userId] || [];
-    conversation.push(prompt);
-    conversationMemory[userId] = conversation;
-
-    response.openai = await openai.createChatCompletion({
+    conversation.push({ role: 'user', content: prompt });
+    response = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
-      prompt: prompt
-      // messages: [{ role: 'user', content: prompt }],
-      
-      // temperature: 0.7,
-      // max_tokens: 100,
-      // top_p: 1,
-      // frequency_penalty: 0.2,
-      // presence_penalty: 0
+      messages: conversation,
     });
 
-    if (response?.openai?.data?.choices?.[0]?.text) {
-      response.openai = response.openai.data.choices[0].text;
+    if (response.data?.choices?.[0]?.message?.content) {
+      let assistantReply = response.data.choices[0].message.content;
       let index = 0;
-      for (let c of response['openai']) {
+      for (let c of assistantReply) {
         if (index <= 1) {
-          if (c == '\n') {
-            response.openai = response.openai.slice(1, response.openai.length);
+          if (c === '\n') {
+            assistantReply = assistantReply.slice(1);
           }
         } else {
           break;
         }
         index++;
       }
+      response.openai = assistantReply;
       response.db = await chat.updateChat(chatId, prompt, response, userId);
     }
   } catch (err) {
     res.status(500).json({
       status: 500,
-      message: err
+      message: err,
     });
-  } finally {
-    if (response?.db && response?.openai) {
-      res.status(200).json({
-        status: 200,
-        message: 'Success',
-        data: {
-          content: response.openai
-        }
-      });
-    }
+    return;
+  }
+
+  if (response.db && response.openai) {
+    conversationMemory[userId] = conversation;
+
+    res.status(200).json({
+      status: 200,
+      message: 'Success',
+      data: {
+        content: response.openai,
+      },
+    });
+  } else {
+    res.status(500).json({
+      status: 500,
+      message: 'Incomplete response',
+    });
   }
 });
 
@@ -191,12 +191,12 @@ router.get('/saved', CheckUser, async (req, res) => {
     if (err?.status === 404) {
       res.status(404).json({
         status: 404,
-        message: 'Not found'
+        message: 'Not found',
       });
     } else {
       res.status(500).json({
         status: 500,
-        message: err
+        message: err,
       });
     }
   } finally {
@@ -204,7 +204,7 @@ router.get('/saved', CheckUser, async (req, res) => {
       res.status(200).json({
         status: 200,
         message: 'Success',
-        data: response
+        data: response,
       });
     }
   }
@@ -220,14 +220,14 @@ router.get('/history', CheckUser, async (req, res) => {
   } catch (err) {
     res.status(500).json({
       status: 500,
-      message: err
+      message: err,
     });
   } finally {
     if (response) {
       res.status(200).json({
         status: 200,
         message: "Success",
-        data: response
+        data: response,
       });
     }
   }
@@ -243,13 +243,13 @@ router.delete('/all', CheckUser, async (req, res) => {
   } catch (err) {
     res.status(500).json({
       status: 500,
-      message: err
+      message: err,
     });
   } finally {
     if (response) {
       res.status(200).json({
         status: 200,
-        message: 'Success'
+        message: 'Success',
       });
     }
   }
