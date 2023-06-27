@@ -4,19 +4,15 @@ import { Configuration, OpenAIApi } from 'openai';
 import user from '../helpers/user.js';
 import jwt from 'jsonwebtoken';
 import chat from "../helpers/chat.js";
-// import { getChatId } from "../helpers/chat.js";
-import { ObjectId } from "mongodb";
+
 
 
 dotnet.config();
 
 let router = Router();
 let conversationMemory = {};
-// let conversationMemory = new Map();
-let chatId;
+// let chatId;
 let conversation = {};
-import { db } from "../db/connection.js";
-import collections from "../db/collections.js";
 
 const CheckUser = async (req, res, next) => {
   jwt.verify(req.cookies?.userToken, process.env.JWT_PRIVATE_KEY, async (err, decoded) => {
@@ -62,54 +58,30 @@ const openai = new OpenAIApi(configuration);
 router.get('/', (req, res) => {
   res.send("Welcome to chatGPT api v1");
 });
+let previousChatId = null; // Define previousChatId variable outside the router
+
 router.post('/', CheckUser, async (req, res) => {
-  const { prompt, userId } = req.body;
-  
-  chatId = new ObjectId().toHexString();
+  const { prompt, userId, chatId } = req.body;
+  // chatId = getChatId();
 
   let response = {};
-  console.log("chatId in router in post :", chatId);
+  console.log("chatId in post router:", chatId);
 
-  let conversation = conversationMemory[chatId] || [
+  let conversation = conversationMemory[userId] || [
     { role: 'system', content: 'You are a helpful assistant.' },
   ];
-
+  console.log("conversation in post router:", conversation);
   try {
     conversation.push({ role: 'user', content: prompt });
-
-    // console.log("before dbConversation in post :", conversation);
-
-
-    // Fetch conversation from the database based on chatId
-    const dbConversation = await db.collection(collections.CHAT).findOne({
-      user: userId.toString(),
-      'data.chatId': chatId,
-    });
-    console.log("dbConversation in post :", dbConversation);
-
-    if (dbConversation) {
-      const data = dbConversation.data;
-      console.log("data in post :", data);
-      for (const chatData of data) {
-        const chatId = chatData.chatId;
-        const chats = chatData.chats;
-        
-        // Use the `chats` array for memory or further processing
-        for (const chat of chats) {
-          conversation.push({ role: 'user', content: chat.prompt });
-          conversation.push({ role: 'assistant', content: chat.content });
-        }
-      }
-    }
 
     response = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
       messages: conversation,
     });
-    // console.log("response in post :", response);
 
     if (response.data?.choices?.[0]?.message?.content) {
       let assistantReply = response.data.choices[0].message.content;
+    
       let index = 0;
       for (let c of assistantReply) {
         if (index <= 1) {
@@ -122,10 +94,9 @@ router.post('/', CheckUser, async (req, res) => {
         index++;
       }
       response.openai = assistantReply;
-      response.db = await chat.newResponse(prompt, response, userId, chatId);
+      response.db = await chat.newResponse(prompt, response, userId);
     }
   } catch (err) {
-    console.log("err in post",err);
     res.status(500).json({
       status: 500,
       message: err,
@@ -134,7 +105,8 @@ router.post('/', CheckUser, async (req, res) => {
   }
 
   if (response.db && response.openai) {
-    conversationMemory[chatId] = conversation;
+    conversationMemory[userId] = conversation;
+    previousChatId = response.db['chatId']; // Update previousChatId with the new chat ID
 
     res.status(200).json({
       status: 200,
@@ -152,52 +124,40 @@ router.post('/', CheckUser, async (req, res) => {
   }
 });
 
-
 router.put('/', CheckUser, async (req, res) => {
   const { prompt, userId, chatId } = req.body;
-  console.log("chatId in router in put :", chatId);
+
+  console.log("chatId in put router:", chatId);
+
+  console.log("previousChatId in put router:", previousChatId);
+  
+  if (chatId !== previousChatId) {
+    // Reset conversation memory if chat ID is different
+    conversationMemory[userId] = {
+      chatId,
+      conversation: [
+        { role: 'system', content: 'You are a helpful assistant.' },
+      ]
+    };
+  }
 
   let response = {};
 
-  let conversation = conversationMemory[chatId] || [
-    { role: 'system', content: 'You are a helpful assistant.' },
-  ];
-
   try {
-    // conversation.push({ role: 'user', content: prompt });
+    const conversation = conversationMemory[userId].conversation;
+    conversation.push({ role: 'user', content: prompt });
 
-    // Fetch conversation from the database based on chatId
-    console.log("before dbConversation in put :", "conversation");
-    const dbConversation = await db.collection(collections.CHAT).findOne({
-      user: userId.toString(),
-      'data.chatId': chatId,
-    });
-    console.log("dbConversation in put :", "dbConversation");
-
-    if (dbConversation) {
-      const data = dbConversation.data;
-      console.log("data in put :", data);
-
-      for (const chatData of data) {
-        const chatId = chatData.chatId;
-        const chats = chatData.chats;
-        
-        // Use the `chats` array for memory or further processing
-        for (const chat of chats) {
-          conversation.push({ role: 'user', content: chat.prompt });
-          conversation.push({ role: 'assistant', content: chat.content });
-        }
-      }
-    }
-    
     response = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
       messages: conversation,
     });
+    previousChatId = chatId;
+    console.log("previousChatId in put router after assigning:", previousChatId);
 
     if (response.data?.choices?.[0]?.message?.content) {
       let assistantReply = response.data.choices[0].message.content;
       let index = 0;
+      // console.log(assistantReply);
       for (let c of assistantReply) {
         if (index <= 1) {
           if (c === '\n') {
@@ -212,7 +172,6 @@ router.put('/', CheckUser, async (req, res) => {
       response.db = await chat.updateChat(chatId, prompt, response, userId);
     }
   } catch (err) {
-    console.log("err :",err);
     res.status(500).json({
       status: 500,
       message: err,
