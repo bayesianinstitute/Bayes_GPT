@@ -35,3 +35,6 @@ server/dist
 
 #testing
 server/tesdting.js
+server/db/tesdting.js
+server/helpers/chat1.js
+server/routers/chat1.js
