@@ -14,7 +14,7 @@ let router = Router();
 let conversationMemory = {};
 // let conversationMemory = new Map();
 let chatId;
-let conversation = {};
+// let conversation = {};
 import { db } from "../db/connection.js";
 import collections from "../db/collections.js";
 
@@ -73,34 +73,11 @@ router.post('/', CheckUser, async (req, res) => {
   let conversation = conversationMemory[chatId] || [
     { role: 'system', content: 'You are a helpful assistant.' },
   ];
+  console.log("prompt in post :", prompt);
 
   try {
     conversation.push({ role: 'user', content: prompt });
 
-    // console.log("before dbConversation in post :", conversation);
-
-
-    // Fetch conversation from the database based on chatId
-    const dbConversation = await db.collection(collections.CHAT).findOne({
-      user: userId.toString(),
-      'data.chatId': chatId,
-    });
-    console.log("dbConversation in post :", dbConversation);
-
-    if (dbConversation) {
-      const data = dbConversation.data;
-      console.log("data in post :", data);
-      for (const chatData of data) {
-        const chatId = chatData.chatId;
-        const chats = chatData.chats;
-        
-        // Use the `chats` array for memory or further processing
-        for (const chat of chats) {
-          conversation.push({ role: 'user', content: chat.prompt });
-          conversation.push({ role: 'assistant', content: chat.content });
-        }
-      }
-    }
 
     response = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
@@ -156,6 +133,8 @@ router.post('/', CheckUser, async (req, res) => {
 router.put('/', CheckUser, async (req, res) => {
   const { prompt, userId, chatId } = req.body;
   console.log("chatId in router in put :", chatId);
+  console.log("prompt in put :", prompt);
+
 
   let response = {};
 
@@ -164,7 +143,7 @@ router.put('/', CheckUser, async (req, res) => {
   ];
 
   try {
-    // conversation.push({ role: 'user', content: prompt });
+    conversation.push({ role: 'user', content: prompt });
 
     // Fetch conversation from the database based on chatId
     console.log("before dbConversation in put :", "conversation");
@@ -172,23 +151,8 @@ router.put('/', CheckUser, async (req, res) => {
       user: userId.toString(),
       'data.chatId': chatId,
     });
-    console.log("dbConversation in put :", "dbConversation");
+    console.log("dbConversation in put :", dbConversation);
 
-    if (dbConversation) {
-      const data = dbConversation.data;
-      console.log("data in put :", data);
-
-      for (const chatData of data) {
-        const chatId = chatData.chatId;
-        const chats = chatData.chats;
-        
-        // Use the `chats` array for memory or further processing
-        for (const chat of chats) {
-          conversation.push({ role: 'user', content: chat.prompt });
-          conversation.push({ role: 'assistant', content: chat.content });
-        }
-      }
-    }
     
     response = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
@@ -221,7 +185,7 @@ router.put('/', CheckUser, async (req, res) => {
   }
 
   if (response.db && response.openai) {
-    conversationMemory[userId] = conversation;
+    conversationMemory[chatId] = conversation;
 
     res.status(200).json({
       status: 200,

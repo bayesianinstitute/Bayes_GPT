@@ -132,6 +132,7 @@ const InputArea = ({ status, chatRef, stateAction }) => {
       stateAction({ type: "chat", status: true });
 
       let chatsId = Date.now();
+      console.log("chatid in ui",chatsId);
 
       dispatch(insertNew({ id: chatsId, content: "", prompt }));
       chatRef?.current?.clearResponse();
