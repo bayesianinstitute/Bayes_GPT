@@ -213,7 +213,7 @@ const InputArea = ({ status, chatRef, stateAction }) => {
           <div className="flexBody">
             <div className="box">
               <textarea
-                placeholder="Press Ctrl+Enter to Submit..."
+                placeholder="Press Ctrl+Enter To Submit..."
                 ref={textAreaRef}
                 value={prompt}
                 onChange={(e) => {

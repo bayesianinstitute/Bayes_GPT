@@ -48,7 +48,7 @@ const Login = () => {
 
             <div>
               <p>Welcome to  BAYES CHAT-AI </p>
-              <p>Log in with your OpenAI account to continue</p>
+              <p>Log in with your BAYES CHAT-AI account to continue</p>
             </div>
 
             <div className="btns">
