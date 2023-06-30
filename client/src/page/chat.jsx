@@ -107,8 +107,6 @@ const Main = () => {
   );
 };
 
-export default Main;
-
 //Input Area
 const InputArea = ({ status, chatRef, stateAction }) => {
   let textAreaRef = useRef();
@@ -175,6 +173,13 @@ const InputArea = ({ status, chatRef, stateAction }) => {
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.ctrlKey && e.key === "Enter") {
+      e.preventDefault();
+      FormHandle();
+    }
+  };
+
   return (
     <div className="inputArea">
       {!status.error ? (
@@ -206,12 +211,13 @@ const InputArea = ({ status, chatRef, stateAction }) => {
           <div className="flexBody">
             <div className="box">
               <textarea
-                placeholder="Send a message..."
+                placeholder="Enter your query... And press Ctrl+Enter to submit..."
                 ref={textAreaRef}
                 value={prompt}
                 onChange={(e) => {
                   dispatch(livePrompt(e.target.value));
                 }}
+                onKeyDown={handleKeyDown} // Call handleKeyDown when a key is pressed
               />
               {!status?.loading ? (
                 <button onClick={FormHandle}>{<Rocket />}</button>
@@ -274,3 +280,5 @@ const InputArea = ({ status, chatRef, stateAction }) => {
     </div>
   );
 };
+
+export default Main;
