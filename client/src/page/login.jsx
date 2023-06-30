@@ -47,7 +47,7 @@ const Login = () => {
             </div>
 
             <div>
-              <p>Welcome to ChatGPT</p>
+              <p>Welcome to  BAYES CHAT-AI </p>
               <p>Log in with your OpenAI account to continue</p>
             </div>
 
@@ -72,19 +72,15 @@ const Login = () => {
 
         <div className="bottum">
           <div className="start">
-            <a href="https://openai.com/policies/terms-of-use" target="_blank">
-              Terms of use
-            </a>
+            <p>Terms of use</p>
           </div>
           <div className="end">
-            <a
-              href="https://openai.com/policies/privacy-policy"
-              target="_blank"
-            >
-              Privacy Policy
-            </a>
+            <p>Privacy Policy</p>
           </div>
         </div>
+
+       
+        
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { addList, emptyAllRes, insertNew, livePrompt } from "../redux/messages";
 import { emptyUser } from "../redux/user";
 import instance from "../config/instance";
+import ReactMarkdown from "react-markdown";
 import "./style.scss";
 
 const reducer = (state, { type, status }) => {
@@ -100,6 +101,7 @@ const Main = () => {
     <div className="main">
       <div className="contentArea">
         {status.chat ? <Chat ref={chatRef} error={status.error} /> : <New />}
+        
       </div>
 
       <InputArea status={status} chatRef={chatRef} stateAction={stateAction} />
@@ -130,7 +132,7 @@ const InputArea = ({ status, chatRef, stateAction }) => {
       stateAction({ type: "chat", status: true });
 
       let chatsId = Date.now();
-      console.log("chatid in ui",chatsId);
+      // console.log("chatid in ui",chatsId);
 
       dispatch(insertNew({ id: chatsId, content: "", prompt }));
       chatRef?.current?.clearResponse();
@@ -211,7 +213,7 @@ const InputArea = ({ status, chatRef, stateAction }) => {
           <div className="flexBody">
             <div className="box">
               <textarea
-                placeholder="Enter your query... And press Ctrl+Enter to submit..."
+                placeholder="Press Ctrl+Enter to Submit..."
                 ref={textAreaRef}
                 value={prompt}
                 onChange={(e) => {

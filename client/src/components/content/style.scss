@@ -34,28 +34,30 @@
 
     .Chat {
         .qs {
-            background: white;
+            background: #BEC3C9;
 
             .txt {
-                color: #343541;
+
+                color: #ffffff;
             }
         }
 
         .res {
             border-top: 1px solid #d9d9e3;
             border-bottom: 1px solid #d9d9e3;
-            background: rgba(247, 247, 248, 1);
+            background: rgb(29, 146, 255);
 
             .txt {
                 .error {
-                    color: #374151;
+                    color: #c7cacf;
                 }
 
                 span {
-                    color: #374151;
+
+                    color: #ffffff;
 
                     &span::after {
-                        border-color: #374151;
+                        border-color: #d35100;
                     }
                 }
             }
@@ -83,15 +85,19 @@
 
     .Chat {
         .qs {
-            background: rgba(52, 53, 65, 1);
+            background: #BEC3C9;
 
             .txt {
-                color: #ECECF1;
+
+                color: #ffffff;
             }
         }
 
+        
+
         .res {
-            background: #444654;
+            background: rgb(29, 146, 255);
+
             border-top: 1px solid rgba(32, 33, 35, .5);
             border-bottom: 1px solid rgba(32, 33, 35, .5);
 
@@ -205,13 +211,14 @@
             width: 30px;
             height: 30px;
             border: none;
-            background: green;
+            background: #007bff; /* Accent color: Green */
             color: white;
             justify-content: center;
             align-items: center;
             border-radius: 2px;
             font-weight: 500;
             margin-right: 1.5rem;
+            border-radius: 50px;
 
             @media only screen and (max-width: 767px) {
                 margin-right: 1rem;
@@ -252,12 +259,14 @@
             width: 30px;
             height: 30px;
             border: none;
-            background: rgb(16, 163, 127);
+            background: #00e5ff; 
             justify-content: center;
             align-items: center;
             border-radius: 2px;
             font-weight: 500;
             margin-right: 1.5rem;
+            border-radius: 50px;
+
 
             @media only screen and (max-width: 767px) {
                 margin-right: 1rem;
@@ -274,44 +283,30 @@
                 background: rgba(239, 68, 68, 1);
                 border-radius: 50%;
                 font-size: 10px;
-                width: 1rem;
-                height: 1rem;
+                top: -5px;
+                right: -5px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                right: -4px;
-                bottom: -4px;
-                color: rgba(255,255,255,1);
-                border: 1px solid rgba(255,255,255,1);
+                width: 15px;
+                height: 15px;
+                color: white;
             }
         }
 
         .txt {
-            display: block;
-
-            .error {
-                background: rgba(239, 68, 68, .1);
-                border: 1px solid rgba(239, 68, 68, 1);
-                border-radius: .375rem;
-                padding: 0.75rem;
-                font-size: .875rem;
-                line-height: 1.25rem;
-            }
-
-            span {
-                line-height: 1.5rem;
-                font-size: 1rem;
-                white-space: pre-wrap;
-
-                &:is(.blink) {
-                    &::after {
-                        content: '';
-                        padding-left: 3px;
-                        border-right: 4px solid;
-                        animation: txtBlink 1s ease-in-out infinite;
-                    }
-                }
-            }
+            line-height: 1.5rem;
+            font-size: 1rem;
         }
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
     }
 }

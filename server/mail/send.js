@@ -8,14 +8,17 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: process.env.MAIL_EMAIL,
         pass: process.env.MAIL_SECRET
-    }
+    },
+    host: process.env.SITE_URL,
+    port: process.env.PORT
+    
 })
 
 export default ({ to, subject, html }) => {
     var options = {
-        from: `OpenAI <${process.env.MAIL_EMAIL}>`,
+        from: `BAYES CHAT-AI <${process.env.MAIL_EMAIL}>`,
         to,
-        subject,
+        subject:"BAYES CHAT-AI :- Verify your email",
         html
     }
 

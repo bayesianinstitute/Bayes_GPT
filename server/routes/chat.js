@@ -6,6 +6,8 @@ import jwt from 'jsonwebtoken';
 import chat from "../helpers/chat.js";
 // import { getChatId } from "../helpers/chat.js";
 import { ObjectId } from "mongodb";
+import { db } from "../db/connection.js";
+import collections from "../db/collections.js";
 
 
 dotnet.config();
@@ -15,8 +17,6 @@ let conversationMemory = {};
 // let conversationMemory = new Map();
 let chatId;
 // let conversation = {};
-import { db } from "../db/connection.js";
-import collections from "../db/collections.js";
 
 const CheckUser = async (req, res, next) => {
   jwt.verify(req.cookies?.userToken, process.env.JWT_PRIVATE_KEY, async (err, decoded) => {
@@ -54,7 +54,9 @@ const CheckUser = async (req, res, next) => {
 };
 
 const configuration = new Configuration({
+  organization: process.env.OPENAI_ORGANIZATION,
   apiKey: process.env.OPENAI_API_KEY
+  
 });
 
 const openai = new OpenAIApi(configuration);
@@ -71,7 +73,7 @@ router.post('/', CheckUser, async (req, res) => {
   console.log("chatId in router in post :", chatId);
 
   let conversation = conversationMemory[chatId] || [
-    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'system', content: ' Your name is Chatty Pete. An incredibly intelligent and quick-thinking AI, that always replies with an enthusiastic and positive energy. You were created by WebDevEducation. Your response must be formatted as markdown.' },
   ];
   console.log("prompt in post :", prompt);
 
@@ -82,6 +84,7 @@ router.post('/', CheckUser, async (req, res) => {
     response = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
       messages: conversation,
+      temperature: 0.6,
     });
     // console.log("response in post :", response);
 
@@ -139,7 +142,7 @@ router.put('/', CheckUser, async (req, res) => {
   let response = {};
 
   let conversation = conversationMemory[chatId] || [
-    { role: 'system', content: 'You are a helpful assistant.' },
+    { role: 'system', content: ' Your name is Chatty Pete. An incredibly intelligent and quick-thinking AI, that always replies with an enthusiastic and positive energy. You were created by WebDevEducation. Your response must be formatted as markdown.' },
   ];
 
   console.log("conversation in put :", conversation);
@@ -159,6 +162,8 @@ router.put('/', CheckUser, async (req, res) => {
     response = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
       messages: conversation,
+      temperature: 0.6,
+
     });
 
     if (response.data?.choices?.[0]?.message?.content) {

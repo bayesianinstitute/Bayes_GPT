@@ -74,7 +74,7 @@ router.post('/signup', CheckLogged, async (req, res) => {
                 fs.readFile(`${path.resolve(path.dirname(''))}/mail/template.html`, 'utf8', (err, html) => {
                     if (!err) {
 
-                        html = html.replace('[URL]', `${process.env.SITE_URL}/signup/pending/${response._id}`)
+                        html = html.replace('[URL]', `${process.env.SITE_URL}:5173/signup/pending/${response._id}`)
                         html = html.replace('[TITLE]', 'Verify your email address')
                         html = html.replace('[CONTENT]', 'To continue setting up your OpenAI account, please verify that this is your email address.')
                         html = html.replace('[BTN_NAME]', 'Verify email address')

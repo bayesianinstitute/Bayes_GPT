@@ -5,9 +5,10 @@
   "author": "anson benny",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite ",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "host": "vite --host"
   },
   "dependencies": {
     "@react-oauth/google": "^0.9.0",
@@ -16,6 +17,7 @@
     "minimatch": "^9.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-markdown": "^8.0.7",
     "react-redux": "^8.0.5",
     "react-router-dom": "^6.9.0",
     "sass": "^1.59.3"
