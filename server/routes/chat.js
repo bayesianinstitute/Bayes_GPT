@@ -142,6 +142,8 @@ router.put('/', CheckUser, async (req, res) => {
     { role: 'system', content: 'You are a helpful assistant.' },
   ];
 
+  console.log("conversation in put :", conversation);
+
   try {
     conversation.push({ role: 'user', content: prompt });
 

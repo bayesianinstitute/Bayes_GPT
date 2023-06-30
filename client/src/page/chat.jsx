@@ -168,6 +168,8 @@ const InputArea = ({ status, chatRef, stateAction }) => {
           chatRef?.current?.loadResponse(stateAction, content, chatsId);
 
           stateAction({ type: "error", status: false });
+
+          dispatch(livePrompt('')); // Clear the prompt by updating the state
         }
       }
     }
