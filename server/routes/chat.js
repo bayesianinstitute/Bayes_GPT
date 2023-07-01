@@ -61,6 +61,23 @@ const configuration = new Configuration({
 
 const openai = new OpenAIApi(configuration);
 
+// // Load conversation data from the database into conversationMemory on server start
+// const loadConversationMemory = async () => {
+//   try {
+//     const chatData = await db.collection(collections.CHAT).find().toArray();
+//     chatData.forEach((chat) => {
+//       const chatId = chat.chatId;
+//       const conversation = chat.data[0].chats;
+//       conversationMemory[chatId] = conversation;
+//     });
+//   } catch (err) {
+//     console.error("Error loading conversation memory:", err);
+//   }
+// };
+
+// // Load conversation memory when the server starts
+// loadConversationMemory();
+
 router.get('/', (req, res) => {
   res.send("Welcome to chatGPT api v1");
 });
@@ -73,7 +90,7 @@ router.post('/', CheckUser, async (req, res) => {
   console.log("chatId in router in post :", chatId);
 
   let conversation = conversationMemory[chatId] || [
-    { role: 'system', content: ' Your name is Chatty Pete. An incredibly intelligent and quick-thinking AI, that always replies with an enthusiastic and positive energy. You were created by WebDevEducation. Your response must be formatted as markdown.' },
+    { role: 'system', content: ' Your name is Bayes CHAT-AI. An incredibly intelligent and quick-thinking AI, that always replies with an enthusiastic and positive energy. You were created by Bayes Solution. Your response must be formatted as markdown.' },
   ];
   console.log("prompt in post :", prompt);
 
@@ -142,7 +159,7 @@ router.put('/', CheckUser, async (req, res) => {
   let response = {};
 
   let conversation = conversationMemory[chatId] || [
-    { role: 'system', content: ' Your name is Chatty Pete. An incredibly intelligent and quick-thinking AI, that always replies with an enthusiastic and positive energy. You were created by WebDevEducation. Your response must be formatted as markdown.' },
+    { role: 'system', content: ' Your name is Bayes CHAT-AI. An incredibly intelligent and quick-thinking AI, that always replies with an enthusiastic and positive energy. You were created by Bayes Solution. Your response must be formatted as markdown.' },
   ];
 
   console.log("conversation in put :", conversation);
