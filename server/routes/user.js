@@ -76,12 +76,12 @@ router.post('/signup', CheckLogged, async (req, res) => {
 
                         html = html.replace('[URL]', `${process.env.SITE_URL}:${procss.env.SITE_PORT}/signup/pending/${response._id}`)
                         html = html.replace('[TITLE]', 'Verify your email address')
-                        html = html.replace('[CONTENT]', 'To continue setting up your BAYES CHAT-AI account, please verify that this is your email address.')
+                        html = html.replace('[CONTENT]', 'To continue setting up your QGPT account, please verify that this is your email address.')
                         html = html.replace('[BTN_NAME]', 'Verify email address')
 
                         sendMail({
                             to: req.body.email,
-                            subject: `OpenAI - Verify your email`,
+                            subject: `QGPT - Verify your email`,
                             html
                         })
 
