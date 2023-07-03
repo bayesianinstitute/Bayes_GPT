@@ -6,7 +6,7 @@ let conversation = [
 ];
 
 const configuration = new Configuration({
-  apiKey: "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",
+  apiKey: "syour-key",
 });
 const openai = new OpenAIApi(configuration);
 
