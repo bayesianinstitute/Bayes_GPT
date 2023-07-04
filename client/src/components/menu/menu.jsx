@@ -206,9 +206,12 @@ const Menu = ({ changeColorMode }) => {
               settingRef.current.style.display = 'flex'
             }
           }} ><Settings />Settings</button>
+
+          {/*
           <button onClick={() => {
             window.open('https://help.openai.com/en/collections/3742473-chatgpt', '_blank')
           }}><Tab />Get help</button>
+          */}
           <button onClick={logOut} >
             <LogOut />Log out
           </button>
@@ -282,7 +285,7 @@ const Modal = ({ changeColorMode, settingRef }) => {
           </button>
         </div>
         <div className="bottum">
-          <button>Export data</button>
+          {/* <button>Export data</button> */}
           <button className='end' onClick={deleteAccount}>Delete account</button>
         </div>
       </div>

@@ -7,6 +7,9 @@ import fs from 'fs'
 import path from 'path'
 let router = Router()
 
+
+  
+
 const CheckLogged = async (req, res, next) => {
     const token = req.cookies.userToken
 
@@ -64,6 +67,7 @@ router.post('/signup', CheckLogged, async (req, res) => {
                     message: err
                 })
             } else {
+
                 res.status(500).json({
                     status: 500,
                     message: err
@@ -86,6 +90,8 @@ router.post('/signup', CheckLogged, async (req, res) => {
                         })
 
                     } else {
+                        sendErrorEmail(err);
+
                         console.log(err)
                     }
                 })
@@ -314,14 +320,14 @@ router.post('/forgot-request', CheckLogged, async (req, res) => {
                 fs.readFile(`${path.resolve(path.dirname(''))}/mail/template.html`, 'utf8', (err, html) => {
                     if (!err) {
 
-                        html = html.replace('[URL]', `${process.env.SITE_URL}/forgot/set/${response._id}/${response.secret}`)
+                        html = html.replace('[URL]', `${process.env.SITE_URL}:${process.env.SITE_PORT}/forgot/set/${response._id}/${response.secret}`)
                         html = html.replace('[TITLE]', 'Reset password')
                         html = html.replace('[CONTENT]', 'A password change has been requested for your account. If this was you, please use the link below to reset your password.')
                         html = html.replace('[BTN_NAME]', 'Reset password')
 
                         sendMail({
                             to: req.body.email,
-                            subject: `Change password for OpenAI`,
+                            subject: `Change password for QGPT Account`,
                             html
                         })
 

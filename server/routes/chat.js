@@ -9,14 +9,45 @@ import { ObjectId } from "mongodb";
 import { db } from "../db/connection.js";
 import collections from "../db/collections.js";
 
+import nodemailer from 'nodemailer';
+
 
 dotnet.config();
 
+
 let router = Router();
 let conversationMemory = {};
-// let conversationMemory = new Map();
 let chatId;
-// let conversation = {};
+let sendingError;
+// ...
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.MAIL_EMAIL,
+    pass: process.env.MAIL_SECRET
+},
+});
+
+const sendErrorEmail = (error) => {
+  const mailOptions = {
+    from: process.env.MAIL_EMAIL,
+    to: process.env.MONITOR_EMAIL,
+    subject: 'Error Occurred',
+    text: error.toString()
+  };
+
+  transporter.sendMail(mailOptions, (err, info) => {
+    if (err) {
+      console.error('Error sending email:', err);
+    } else {
+      console.log('Email sent:', info.response);
+    }
+  });
+};
+
+
+
 
 const CheckUser = async (req, res, next) => {
   jwt.verify(req.cookies?.userToken, process.env.JWT_PRIVATE_KEY, async (err, decoded) => {
@@ -61,22 +92,8 @@ const configuration = new Configuration({
 
 const openai = new OpenAIApi(configuration);
 
-// // Load conversation data from the database into conversationMemory on server start
-// const loadConversationMemory = async () => {
-//   try {
-//     const chatData = await db.collection(collections.CHAT).find().toArray();
-//     chatData.forEach((chat) => {
-//       const chatId = chat.chatId;
-//       const conversation = chat.data[0].chats;
-//       conversationMemory[chatId] = conversation;
-//     });
-//   } catch (err) {
-//     console.error("Error loading conversation memory:", err);
-//   }
-// };
 
-// // Load conversation memory when the server starts
-// loadConversationMemory();
+
 
 router.get('/', (req, res) => {
   res.send("Welcome to chatGPT api v1");
@@ -86,11 +103,13 @@ router.post('/', CheckUser, async (req, res) => {
   
   chatId = new ObjectId().toHexString();
 
+
+
   let response = {};
   console.log("chatId in router in post :", chatId);
 
   let conversation = conversationMemory[chatId] || [
-    { role: 'system', content: ' Your name is Bayes CHAT-AI. An incredibly intelligent and quick-thinking AI, that always replies with an enthusiastic and positive energy. You were created by Bayes Solution. Your response must be formatted as markdown.' },
+    { role: 'system', content: ' Your name is QGPT. An incredibly intelligent and quick-thinking AI, that always replies with an enthusiastic and positive energy. You were created by Bayes Solution. Your response must be formatted as markdown.' },
   ];
   console.log("prompt in post :", prompt);
 
@@ -122,7 +141,11 @@ router.post('/', CheckUser, async (req, res) => {
       response.db = await chat.newResponse(prompt, response, userId, chatId);
     }
   } catch (err) {
-    console.log("err in post",err);
+    sendingError="Error in post"+err;
+
+    sendErrorEmail(sendingError);
+
+
     res.status(500).json({
       status: 500,
       message: err,
@@ -142,6 +165,10 @@ router.post('/', CheckUser, async (req, res) => {
       },
     });
   } else {
+    sendingError="Error in response chat"+err;
+
+    sendErrorEmail(sendingError);
+
     res.status(500).json({
       status: 500,
       message: 'Incomplete response',
@@ -200,7 +227,11 @@ router.put('/', CheckUser, async (req, res) => {
       response.db = await chat.updateChat(chatId, prompt, response, userId);
     }
   } catch (err) {
-    console.log("err :",err);
+    sendingError="Error in put chat"+err;
+
+    sendErrorEmail(err);
+
+    console.log("err :"+err);
     res.status(500).json({
       status: 500,
       message: err,
@@ -219,6 +250,8 @@ router.put('/', CheckUser, async (req, res) => {
       },
     });
   } else {
+    sendErrorEmail(sendingError);
+
     res.status(500).json({
       status: 500,
       message: 'Incomplete response',
@@ -241,6 +274,8 @@ router.get('/saved', CheckUser, async (req, res) => {
         message: 'Not found',
       });
     } else {
+      sendingError="Error in getChat : ${err}";
+      sendErrorEmail(sendingError);
       res.status(500).json({
         status: 500,
         message: err,
@@ -265,6 +300,9 @@ router.get('/history', CheckUser, async (req, res) => {
   try {
     response = await chat.getHistory(userId);
   } catch (err) {
+    
+    sendingError="Error in getting history "+err;
+    sendErrorEmail(sendingError);
     res.status(500).json({
       status: 500,
       message: err,
@@ -288,7 +326,11 @@ router.delete('/all', CheckUser, async (req, res) => {
   try {
     response = await chat.deleteAllChat(userId);
   } catch (err) {
+    sendingError="Error in deleting chat"+err;
+    sendErrorEmail(sendingError);
+
     res.status(500).json({
+      
       status: 500,
       message: err,
     });
