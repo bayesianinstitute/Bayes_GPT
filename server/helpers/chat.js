@@ -196,9 +196,40 @@ const chatHelper = {
         });
     });
   },
+  saveConversation: (chatId, conversation) => {
+    return new Promise((resolve, reject) => {
+      db.collection(collections.CONVERSATION)
+        .insertOne({
+          chatId,
+          conversation,
+        })
+        .then((res) => {
+          resolve(res);
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    });
+  },
+
+  getConversation: (chatId) => {
+    return new Promise((resolve, reject) => {
+      db.collection(collections.CONVERSATION)
+        .findOne({
+          chatId,
+        })
+        .then((res) => {
+          if (res) {
+            resolve(res.conversation);
+          } else {
+            reject({ status: 404 });
+          }
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    });
+  },
 };
 
 export default chatHelper;
-export function getChatId() {
-  return chatId;
-}

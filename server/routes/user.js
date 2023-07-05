@@ -78,7 +78,7 @@ router.post('/signup', CheckLogged, async (req, res) => {
                 fs.readFile(`${path.resolve(path.dirname(''))}/mail/template.html`, 'utf8', (err, html) => {
                     if (!err) {
 
-                        html = html.replace('[URL]', `${process.env.SITE_URL}:${procss.env.SITE_PORT}/signup/pending/${response._id}`)
+                        html = html.replace('[URL]', `${process.env.SITE_URL}:${process.env.SITE_PORT}/signup/pending/${response._id}`)
                         html = html.replace('[TITLE]', 'Verify your email address')
                         html = html.replace('[CONTENT]', 'To continue setting up your QGPT account, please verify that this is your email address.')
                         html = html.replace('[BTN_NAME]', 'Verify email address')

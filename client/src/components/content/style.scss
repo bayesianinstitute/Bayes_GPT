@@ -34,30 +34,28 @@
 
     .Chat {
         .qs {
-            background: #BEC3C9;
+            background: white;
 
             .txt {
-
-                color: #ffffff;
+                color: #343541;
             }
         }
 
         .res {
             border-top: 1px solid #d9d9e3;
             border-bottom: 1px solid #d9d9e3;
-            background: rgb(29, 146, 255);
+            background: rgba(247, 247, 248, 1);
 
             .txt {
                 .error {
-                    color: #c7cacf;
+                    color: #374151;
                 }
 
                 span {
-
-                    color: #ffffff;
+                    color: #374151;
 
                     &span::after {
-                        border-color: #d35100;
+                        border-color: #374151;
                     }
                 }
             }
@@ -85,19 +83,15 @@
 
     .Chat {
         .qs {
-            background: #BEC3C9;
+            background: rgba(52, 53, 65, 1);
 
             .txt {
-
-                color: #ffffff;
+                color: #ECECF1;
             }
         }
 
-        
-
         .res {
-            background: rgb(29, 146, 255);
-
+            background: #444654;
             border-top: 1px solid rgba(32, 33, 35, .5);
             border-bottom: 1px solid rgba(32, 33, 35, .5);
 
