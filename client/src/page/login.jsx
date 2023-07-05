@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import { GptIcon } from "../assets";
-import {RobotIcon} from "../assets";
+import { RobotIcon } from "../assets";
 import { LoginComponent } from "../components";
 import { setLoading } from "../redux/loading";
+import ReCAPTCHA from "react-google-recaptcha";
 import "./style.scss";
 
 const Login = () => {
@@ -34,6 +35,10 @@ const Login = () => {
     }
   }, [location]);
 
+  const handleLogin = () => {
+    // Add your login logic here, after verifying the reCAPTCHA response
+  };
+
   return (
     <div className="Auth">
       <div className="inner">
@@ -47,10 +52,11 @@ const Login = () => {
             </div>
 
             <div>
-              <p>Welcome to  QGPT </p>
+              <p>Welcome to QGPT</p>
               <p>Log in with your QGPT account to continue</p>
             </div>
 
+             
             <div className="btns">
               <button
                 onClick={() => {
@@ -67,6 +73,8 @@ const Login = () => {
                 Sign up
               </button>
             </div>
+
+           
           </div>
         )}
 
@@ -78,9 +86,6 @@ const Login = () => {
             <p>Privacy Policy</p>
           </div>
         </div>
-
-       
-        
       </div>
     </div>
   );
