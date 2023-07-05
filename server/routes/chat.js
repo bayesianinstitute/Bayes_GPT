@@ -189,23 +189,19 @@ router.put("/", CheckUser, async (req, res) => {
   // console.log("conversation in put :", conversation);
 
   try {
+    const conversation = await chat.getConversation(chatId);
+    // Use the conversation object here
+    console.log("Conversation:", conversation);
+    // ...
+
     conversation.push({ role: "user", content: prompt });
 
-
-    // Fetch conversation from the database based on chatId
-    // console.log("coversion in put :",conversation);
-    const dbConversation = await db.collection(collections.CHAT).findOne({
-      user: userId.toString(),
-      "data.chatId": chatId,
-    });
- 
 
     response = await openai.createChatCompletion({
       model: "gpt-3.5-turbo",
       messages: conversation,
       temperature: 0.6,
     });
-    
 
     if (response.data?.choices?.[0]?.message?.content) {
       let assistantReply = response.data.choices[0].message.content;
