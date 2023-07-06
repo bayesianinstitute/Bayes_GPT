@@ -7,6 +7,7 @@ import { useDispatch } from 'react-redux'
 import { insertUser } from '../../redux/user'
 import instance from '../../config/instance'
 import './style.scss'
+import ReCAPTCHA from 'react-google-recaptcha';
 
 const reducer = (state, { type, status }) => {
     switch (type) {
@@ -34,6 +35,12 @@ const LoginComponent = () => {
         manual: true
     })
 
+    const [captchaToken, setCaptchaToken] = useState('');
+
+    const handleRecaptchaChange = (token) => {
+        setCaptchaToken(token);
+      };
+
     const handleInput = (e) => {
         setFormData({
             ...formData,
@@ -54,6 +61,11 @@ const LoginComponent = () => {
         e?.preventDefault()
         let res = null
         try {
+            if (!captchaToken) {
+                // reCAPTCHA token not present or verified
+                alert('Please complete the reCAPTCHA verification.');
+                return;
+            }
             res = await instance.get('/api/user/login', {
                 params: googleData || formData
             })
@@ -138,6 +150,11 @@ const LoginComponent = () => {
                                     isDisabled />
 
                             </div>
+
+                            <ReCAPTCHA
+                            sitekey="6LetHQAnAAAAAJPHQDjRDdWXgjRz2KVJMglUjg4M"
+                            onChange={handleRecaptchaChange}
+                          />
 
                             <div className="password">
 

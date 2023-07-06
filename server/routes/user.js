@@ -5,8 +5,12 @@ import jwt from 'jsonwebtoken'
 import axios from 'axios'
 import fs from 'fs'
 import path from 'path'
+import recaptcha from 'recaptcha-v2';
+
 let router = Router()
 
+
+const recaptchaSecretKey=process.env.RECAPTCHA_SECRET_KEY;
 
   
 
@@ -230,71 +234,86 @@ router.put('/signup-finish', CheckLogged, async (req, res) => {
 
 router.get('/login', CheckLogged, async (req, res) => {
     const Continue = async () => {
-        let response = null
-        try {
-            response = await user.login(req.query)
-        } catch (err) {
-            if (err?.status === 422) {
-                res.status(422).json({
-                    status: 422,
-                    message: 'Email or password wrong'
-                })
-            } else {
-                res.status(500).json({
-                    status: 500,
-                    message: err
-                })
-            }
-        } finally {
-            if (response) {
-                let token = jwt.sign({
-                    _id: response._id,
-                    email: response.email
-                }, process.env.JWT_PRIVATE_KEY, {
-                    expiresIn: '24h'
-                })
-
-                res.status(200)
-                    .cookie("userToken", token, { httpOnly: true, expires: new Date(Date.now() + 86400000) })
-                    .json({
-                        status: 200,
-                        message: 'Success',
-                        data: response
-                    })
-            }
-        }
-    }
-
-    if (req.query?.manual === 'false') {
-        let response = null
-        try {
-            response = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
-                headers: {
-                    "Authorization": `Bearer ${req.query.token}`
-                }
-            })
-        } catch (err) {
-            res.status(500).json({
-                status: 500,
-                message: err
-            })
-        } finally {
-            if (response?.data.email_verified) {
-                req.query.email = response?.data.email
-                Continue()
-            }
-        }
-    } else if (req.query?.email && req.query?.pass) {
-        req.query.email = req.query.email.toLowerCase()
-        Continue()
-    } else {
-        res.status(422).json({
+      let response = null;
+      try {
+        response = await user.login(req.query);
+      } catch (err) {
+        if (err?.status === 422) {
+          res.status(422).json({
             status: 422,
-            message: 'Email or password wrong'
-        })
+            message: 'Email or password wrong',
+          });
+        } else {
+          res.status(500).json({
+            status: 500,
+            message: err,
+          });
+        }
+      } finally {
+        if (response) {
+          let token = jwt.sign(
+            {
+              _id: response._id,
+              email: response.email,
+            },
+            process.env.JWT_PRIVATE_KEY,
+            {
+              expiresIn: '24h',
+            }
+          );
+  
+          res
+            .status(200)
+            .cookie('userToken', token, { httpOnly: true, expires: new Date(Date.now() + 86400000) })
+            .json({
+              status: 200,
+              message: 'Success',
+              data: response,
+            });
+        }
+      }
+    };
+  
+    if (req.query?.manual === 'false') {
+      // reCAPTCHA verification for Google login
+      const recaptchaToken = req.query.recaptchaToken; // The reCAPTCHA token passed from the client
+      const verified = await recaptcha(recaptchaSecretKey, recaptchaToken);
+  
+      if (verified) {
+        let response = null;
+        try {
+          response = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: {
+              Authorization: `Bearer ${req.query.token}`,
+            },
+          });
+        } catch (err) {
+          res.status(500).json({
+            status: 500,
+            message: err,
+          });
+        } finally {
+          if (response?.data.email_verified) {
+            req.query.email = response?.data.email;
+            Continue();
+          }
+        }
+      } else {
+        res.status(400).json({
+          status: 400,
+          message: 'reCAPTCHA verification failed',
+        });
+      }
+    } else if (req.query?.email && req.query?.pass) {
+      req.query.email = req.query.email.toLowerCase();
+      Continue();
+    } else {
+      res.status(422).json({
+        status: 422,
+        message: 'Email or password wrong',
+      });
     }
-
-})
+  });
 
 router.post('/forgot-request', CheckLogged, async (req, res) => {
     if (req.body?.email) {
