@@ -52,8 +52,8 @@ const Login = () => {
             </div>
 
             <div>
-              <p>Welcome to QGPT</p>
-              <p>Log in with your QGPT account to continue</p>
+              <p>Welcome to BayesChat</p>
+              <p>Log in with your BayesChat account to continue</p>
             </div>
 
              

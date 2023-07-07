@@ -16,9 +16,9 @@ const transporter = nodemailer.createTransport({
 
 export default ({ to, subject, html }) => {
     var options = {
-        from: `QGPT <${process.env.MAIL_EMAIL}>`,
+        from: `BayesChat <${process.env.MAIL_EMAIL}>`,
         to,
-        subject:"QGPT :- Verify your email",
+        subject:"BayesChat :- Verify your email",
         html
     }
 

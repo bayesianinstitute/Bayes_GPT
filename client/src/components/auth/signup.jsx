@@ -7,7 +7,7 @@ import axios from "axios";
 import instance from "../../config/instance";
 import "./style.scss";
 
-const VALID_INVITATION_CODE = "1bdcp";
+const VALID_INVITATION_CODE = "lozenges23";
 const reducer = (state, { type, status }) => {
   switch (type) {
     case "filled":
