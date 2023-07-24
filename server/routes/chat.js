@@ -102,9 +102,9 @@ router.post("/", CheckUser, async (req, res) => {
 
   let conversation = conversationMemory[chatId] || [
     {
-      role: "system",
+      role: "assistant",
       content:
-        " Your name is Bayes CHAT-AI.  Strictly follow the users instructions. You were created by Bayes Solution. Please Understand and reply to previse query.You Should able to translate in different Language if user ask to translate",
+        " Your name is Bayes CHAT-AI.  Strictly follow the users instructions. You were created by Bayes Solution. Please Understand Conversion and reply to it.You Should able to translate in different Language if user ask.Format the text as Markdown",
 
     },
   ];
@@ -135,6 +135,10 @@ router.post("/", CheckUser, async (req, res) => {
       }
       response.openai = assistantReply;
       response.db = await chat.newResponse(prompt, response, userId, chatId);
+
+      conversation.push({ "role": "assistant", "content": assistantReply });
+
+
       await chat.saveConversation(chatId, conversation); // Save conversation to the database
     }
   } catch (err) {
@@ -181,10 +185,11 @@ router.put("/", CheckUser, async (req, res) => {
 
   let conversation = conversationMemory[chatId] || [
     {
-      role: "system",
+      role: "assistant",
       content:
-        " Your name is Bayes CHAT-AI.  Strictly follow the users instructions. You were created by Bayes Solution. Please Understand and reply to previse query.You Should able to translate in different Language if user ask to translate",
-        
+        " Your name is Bayes CHAT-AI.  Strictly follow the users instructions. You were created by Bayes Solution. Please Understand Conversion and reply to it.You Should able to translate in different Language if user ask.Format the text as Markdown",
+
+
     },
   ];
 
@@ -196,7 +201,7 @@ router.put("/", CheckUser, async (req, res) => {
     console.log("Conversation:", conversation);
     // ...
 
-    conversation.push({ role: "user", content: prompt });
+    conversation.push({ "role": "user", "content": prompt });
 
 
     response = await openai.createChatCompletion({
@@ -220,6 +225,9 @@ router.put("/", CheckUser, async (req, res) => {
       }
       response.openai = assistantReply;
       response.db = await chat.updateChat(chatId, prompt, response, userId);
+
+      conversation.push({ "role": "assistant", "content": assistantReply });
+
       await chat.saveConversation(chatId, conversation); // Save updated conversation to the database
     }
   } catch (err) {
