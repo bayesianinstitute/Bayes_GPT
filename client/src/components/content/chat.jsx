@@ -9,7 +9,7 @@ import { RobotIcon } from '../../assets'
 
 import { insertNew } from '../../redux/messages'
 import './style.scss'
-
+import ReactMarkdown from 'react-markdown'; 
 const Chat = forwardRef(({ error }, ref) => {
 
   const dispatch = useDispatch()
@@ -79,8 +79,8 @@ const Chat = forwardRef(({ error }, ref) => {
                 <div className='acc'>
                   {user?.fName?.charAt(0)}
                 </div>
-                <div className='txt'>
-                  {obj?.prompt}
+                <div className='txt1'>
+                <ReactMarkdown>{obj?.prompt}</ReactMarkdown>
                 </div>
               </div>
 
@@ -91,7 +91,9 @@ const Chat = forwardRef(({ error }, ref) => {
                 </div>
                 <div className='txt'>
                   <span>
+                   <ReactMarkdown>
                     {obj?.content}
+                    </ReactMarkdown>
                   </span>
                 </div>
               </div>
@@ -108,7 +110,9 @@ const Chat = forwardRef(({ error }, ref) => {
                 {user?.fName?.charAt(0)}
               </div>
               <div className='txt'>
+              <ReactMarkdown>
                 {latest?.prompt}
+                </ReactMarkdown>
               </div>
             </div>
 
