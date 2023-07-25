@@ -6,15 +6,14 @@ import jwt from "jsonwebtoken";
 import chat from "../helpers/chat.js";
 // import { getChatId } from "../helpers/chat.js";
 import { ObjectId } from "mongodb";
-import { db } from "../db/connection.js";
-import collections from "../db/collections.js";
+
 
 import nodemailer from "nodemailer";
 
 dotnet.config();
 
 let router = Router();
-let conversationMemory = {};
+// let conversationMemory = {};
 let chatId;
 let sendingError;
 // ...
@@ -100,12 +99,11 @@ router.post("/", CheckUser, async (req, res) => {
   let response = {};
   console.log("chatId in router in post :", chatId);
 
-  let conversation = conversationMemory[chatId] || [
+  let conversation =  [
     {
       role: "assistant",
       content:
-        " Your name is Bayes CHAT-AI.  Strictly follow the users instructions. You were created by Bayes Solution. Please Understand Conversion and reply to it.You Should able to translate in different Language if user ask.Format the text as Markdown",
-
+        " Your name is Bayes CHAT-AI.  Strictly follow the users instructions. Please Understand Query try to reply to it in Efficient Way.  You were created by Bayes Solution  .You Should able to translate in different Language if user ask.Give content in Mardown Format Only",
     },
   ];
   console.log("prompt in post :", prompt);
@@ -127,6 +125,7 @@ router.post("/", CheckUser, async (req, res) => {
         if (index <= 1) {
           if (c === "\n") {
             assistantReply = assistantReply.slice(1);
+            assistantReply = assistantReply.replace(/\n/g, '  ');
           }
         } else {
           break;
@@ -154,7 +153,7 @@ router.post("/", CheckUser, async (req, res) => {
   }
 
   if (response.db && response.openai) {
-    conversationMemory[chatId] = conversation;
+    // conversationMemory[chatId] = conversation;
 
     res.status(200).json({
       status: 200,
@@ -183,23 +182,13 @@ router.put("/", CheckUser, async (req, res) => {
 
   let response = {};
 
-  let conversation = conversationMemory[chatId] || [
-    {
-      role: "assistant",
-      content:
-        " Your name is Bayes CHAT-AI.  Strictly follow the users instructions. You were created by Bayes Solution. Please Understand Conversion and reply to it.You Should able to translate in different Language if user ask.Format the text as Markdown",
+  // load chat data from database 
+  let conversation = await chat.getConversation(chatId);
 
-
-    },
-  ];
-
-  // console.log("conversation in put :", conversation);
 
   try {
-    const conversation = await chat.getConversation(chatId);
     // Use the conversation object here
     console.log("Conversation:", conversation);
-    // ...
 
     conversation.push({ "role": "user", "content": prompt });
 
@@ -217,6 +206,9 @@ router.put("/", CheckUser, async (req, res) => {
         if (index <= 1) {
           if (c === "\n") {
             assistantReply = assistantReply.slice(1);
+
+            assistantReply = assistantReply.replace(/\n/g, '  ');
+
           }
         } else {
           break;
@@ -244,7 +236,7 @@ router.put("/", CheckUser, async (req, res) => {
   }
 
   if (response.db && response.openai) {
-    conversationMemory[chatId] = conversation;
+    // conversationMemory[chatId] = conversation;
 
     res.status(200).json({
       status: 200,
