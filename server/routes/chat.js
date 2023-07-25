@@ -120,18 +120,7 @@ router.post("/", CheckUser, async (req, res) => {
 
     if (response.data?.choices?.[0]?.message?.content) {
       let assistantReply = response.data.choices[0].message.content;
-      let index = 0;
-      for (let c of assistantReply) {
-        if (index <= 1) {
-          if (c === "\n") {
-            assistantReply = assistantReply.slice(1);
-            assistantReply = assistantReply.replace(/\n/g, '  ');
-          }
-        } else {
-          break;
-        }
-        index++;
-      }
+
       response.openai = assistantReply;
       response.db = await chat.newResponse(prompt, response, userId, chatId);
 
@@ -201,20 +190,7 @@ router.put("/", CheckUser, async (req, res) => {
 
     if (response.data?.choices?.[0]?.message?.content) {
       let assistantReply = response.data.choices[0].message.content;
-      let index = 0;
-      for (let c of assistantReply) {
-        if (index <= 1) {
-          if (c === "\n") {
-            assistantReply = assistantReply.slice(1);
-
-            assistantReply = assistantReply.replace(/\n/g, '  ');
-
-          }
-        } else {
-          break;
-        }
-        index++;
-      }
+ 
       response.openai = assistantReply;
       response.db = await chat.updateChat(chatId, prompt, response, userId);
 
