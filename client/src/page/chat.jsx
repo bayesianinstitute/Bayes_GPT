@@ -218,7 +218,7 @@ const InputArea = ({ status, chatRef, stateAction }) => {
                       chatRef.current.loadResponse(stateAction);
                     }}
                   >
-                    <Reload /> Regenerate response
+                    {/* <Reload /> Regenerate response */}
                   </button>
                 ) : (
                   <button
