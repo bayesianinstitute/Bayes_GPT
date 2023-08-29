@@ -301,7 +301,7 @@ const InputArea = ({ status, chatRef, stateAction }) => {
         >
           ChatGPT Mar 14 Version.
       </a>{" "}*/}
-        Free Research Preview. Our goal is to make AI systems more natural and
+        Free Bayes Preview Research. Our goal is to make AI systems more natural and
         safe to interact with. Your feedback will help us improve.
       </div>
     </div>

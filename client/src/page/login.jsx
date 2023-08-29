@@ -52,8 +52,8 @@ const Login = () => {
             </div>
 
             <div>
-              <p>Welcome to BayesChat</p>
-              <p>Log in with your BayesChat account to continue</p>
+              <p>Welcome to Bayes E-commerce Chat</p>
+              <p>Log in with your  account to continue</p>
             </div>
 
              
