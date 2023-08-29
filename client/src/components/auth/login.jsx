@@ -152,7 +152,7 @@ const LoginComponent = () => {
                             </div>
 
                             <ReCAPTCHA
-                            sitekey="6LetHQAnAAAAAJPHQDjRDdWXgjRz2KVJMglUjg4M"
+                            sitekey="6LcskeMnAAAAAEHrUEP03aghA2XD_U2496ivQ1Q2"
                             onChange={handleRecaptchaChange}
                           />
 

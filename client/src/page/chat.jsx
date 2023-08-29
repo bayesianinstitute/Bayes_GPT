@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer, useRef } from "react";
+import React, { useEffect, useReducer, useRef, useState } from "react";
 import { Reload, Rocket, Stop } from "../assets";
 import { Chat, New } from "../components";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -101,7 +101,6 @@ const Main = () => {
     <div className="main">
       <div className="contentArea">
         {status.chat ? <Chat ref={chatRef} error={status.error} /> : <New />}
-        
       </div>
 
       <InputArea status={status} chatRef={chatRef} stateAction={stateAction} />
@@ -111,6 +110,7 @@ const Main = () => {
 
 //Input Area
 const InputArea = ({ status, chatRef, stateAction }) => {
+  
   let textAreaRef = useRef();
 
   const navigate = useNavigate();
@@ -119,13 +119,8 @@ const InputArea = ({ status, chatRef, stateAction }) => {
 
   const { prompt, content, _id } = useSelector((state) => state.messages);
 
-  useEffect(() => {
-    textAreaRef.current?.addEventListener("input", (e) => {
-      textAreaRef.current.style.height = "auto";
-      textAreaRef.current.style.height =
-        textAreaRef.current.scrollHeight + "px";
-    });
-  });
+
+  const [textSubmitted,setTextSubmitted]=useState(false);
 
   const FormHandle = async () => {
     if (prompt?.length > 0) {
@@ -169,11 +164,39 @@ const InputArea = ({ status, chatRef, stateAction }) => {
 
           stateAction({ type: "error", status: false });
 
-          dispatch(livePrompt('')); // Clear the prompt by updating the state
+          dispatch(livePrompt("")); // Clear the prompt by updating the state
+
+          // Reset textSubmitted state to false after submitting
+          setTextSubmitted(true);
+
+          // Reset the textarea's height to default value after submitting
+          if (textAreaRef.current) {
+            textAreaRef.current.style.height = "auto";
+            textAreaRef.current.style.height = "31px"; // Default height after submitting
+
+
+          }
         }
       }
     }
   };
+
+    useEffect(() => {
+    const adjustTextAreaHeight = () => {
+      textAreaRef.current.style.height = "auto"; // Reset height to auto
+      textAreaRef.current.style.height = textAreaRef.current.scrollHeight + "px";
+      
+    };
+
+    textAreaRef.current.addEventListener("input", adjustTextAreaHeight);
+
+
+    if (textAreaRef.current && prompt.length === 0 && textSubmitted) {
+      textAreaRef.current.style.height="31 px"
+    }
+    
+  }, [prompt,textSubmitted]);
+
 
   const handleKeyDown = (e) => {
     if (e.ctrlKey && e.key === "Enter") {
@@ -220,7 +243,9 @@ const InputArea = ({ status, chatRef, stateAction }) => {
                   dispatch(livePrompt(e.target.value));
                 }}
                 onKeyDown={handleKeyDown} // Call handleKeyDown when a key is pressed
+
               />
+
               {!status?.loading ? (
                 <button onClick={FormHandle}>{<Rocket />}</button>
               ) : (
