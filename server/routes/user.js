@@ -89,7 +89,7 @@ router.post('/signup', CheckLogged, async (req, res) => {
 
                         sendMail({
                             to: req.body.email,
-                            subject: `BayesChat - Verify your email`,
+                            subject: `Bayes E-commerce Chat  - Verify your email`,
                             html
                         })
 
@@ -346,7 +346,7 @@ router.post('/forgot-request', CheckLogged, async (req, res) => {
 
                         sendMail({
                             to: req.body.email,
-                            subject: `Change password for BayesChat Account`,
+                            subject: `Change password for Bayes E-commerce Chat  Account`,
                             html
                         })
 
