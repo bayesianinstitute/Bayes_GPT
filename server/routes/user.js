@@ -84,7 +84,7 @@ router.post('/signup', CheckLogged, async (req, res) => {
 
                         html = html.replace('[URL]', `${process.env.SITE_URL}:${process.env.SITE_PORT}/signup/pending/${response._id}`)
                         html = html.replace('[TITLE]', 'Verify your email address')
-                        html = html.replace('[CONTENT]', 'To continue setting up your BayesChat account, please verify that this is your email address.')
+                        html = html.replace('[CONTENT]', 'To continue setting up your Bayes E-commerce Chat  account, please verify that this is your email address.')
                         html = html.replace('[BTN_NAME]', 'Verify email address')
 
                         sendMail({
