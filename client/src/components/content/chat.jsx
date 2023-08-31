@@ -119,7 +119,7 @@ const Chat = forwardRef(({ error }, ref) => {
               <div className='txt'>
                 {
                   error ? <div className="error">
-                    Something went wrong. If this issue persists please contact us through our help center at help.openai.com.
+                    Something went wrong.
                   </div> : <span ref={contentRef} className="blink" />
                 }
               </div>
