@@ -213,13 +213,13 @@ const InputArea = ({ status, chatRef, stateAction }) => {
             {status.chat && content?.length > 0 && status.actionBtns && (
               <>
                 {!status?.resume ? (
-                  <button
+                  {/* <button
                     onClick={() => {
                       chatRef.current.loadResponse(stateAction);
                     }}
                   >
                     <Reload /> Regenerate response
-                  </button>
+                  </button> */}
                 ) : (
                   <button
                     onClick={() => {
