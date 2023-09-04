@@ -2,7 +2,7 @@ import React, {
   forwardRef,
   Fragment,
   useImperativeHandle,
-  useRef,
+  useRef,useEffect
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { GptIcon } from "../../assets";
@@ -17,6 +17,7 @@ const Chat = forwardRef(({ error }, ref) => {
 
   const contentRef = useRef();
 
+  const containerRef = useRef(); // for scroll down
 
   const { user, messages } = useSelector((state) => state);
   const { latest, content, all } = messages;
@@ -65,6 +66,9 @@ const Chat = forwardRef(({ error }, ref) => {
     },
   }));
 
+  useEffect(() => {
+    containerRef.current.scrollIntoView();
+  }, [latest, content, all]);
 
   return (
     <div className="Chat">
@@ -124,6 +128,7 @@ const Chat = forwardRef(({ error }, ref) => {
           </div>
         </Fragment>
       )}
+      <div ref={containerRef} />
     </div>
   );
 });

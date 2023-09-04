@@ -132,6 +132,19 @@ const InputArea = ({ status, chatRef, stateAction }) => {
       dispatch(insertNew({ id: chatsId, content: "", prompt }));
       chatRef?.current?.clearResponse();
 
+      dispatch(livePrompt("")); // Clear the prompt by updating the state
+
+      // Reset textSubmitted state to false after submitting
+      setTextSubmitted(true);
+
+      // Reset the textarea's height to default value after submitting
+      if (textAreaRef.current) {
+        textAreaRef.current.style.height = "auto";
+        textAreaRef.current.style.height = "31px"; // Default height after submitting
+
+
+      }
+
       let res = null;
 
       try {
@@ -163,19 +176,6 @@ const InputArea = ({ status, chatRef, stateAction }) => {
           chatRef?.current?.loadResponse(stateAction, content, chatsId);
 
           stateAction({ type: "error", status: false });
-
-          dispatch(livePrompt("")); // Clear the prompt by updating the state
-
-          // Reset textSubmitted state to false after submitting
-          setTextSubmitted(true);
-
-          // Reset the textarea's height to default value after submitting
-          if (textAreaRef.current) {
-            textAreaRef.current.style.height = "auto";
-            textAreaRef.current.style.height = "31px"; // Default height after submitting
-
-
-          }
         }
       }
     }
