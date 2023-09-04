@@ -1,30 +1,38 @@
 import React, {
   forwardRef,
   Fragment,
-  useImperativeHandle, useRef
-} from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { GptIcon } from '../../assets'
-import { RobotIcon } from '../../assets'
+  useImperativeHandle,
+  useRef,
+} from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { GptIcon } from "../../assets";
+import { RobotIcon } from "../../assets";
 
-import { insertNew } from '../../redux/messages'
-import './style.scss'
-import ReactMarkdown from 'react-markdown'; 
-import ReactDOMServer from 'react-dom/server';
+import { insertNew } from "../../redux/messages";
+import "./style.scss";
+import ReactMarkdown from "react-markdown";
+import ReactDOMServer from "react-dom/server";
 const Chat = forwardRef(({ error }, ref) => {
+  const dispatch = useDispatch();
 
-  const dispatch = useDispatch()
+  const contentRef = useRef();
 
-  const contentRef = useRef()
+  const containerRef = useRef(); // for scroll down
 
-  const { user, messages } = useSelector((state) => state)
-  const { latest, content, all } = messages
+  const { user, messages } = useSelector((state) => state);
+  const { latest, content, all } = messages;
 
   const renderMarkdown = (content) => {
-    return ReactDOMServer.renderToString(<ReactMarkdown>{content}</ReactMarkdown>);
+    return ReactDOMServer.renderToString(
+      <ReactMarkdown>{content}</ReactMarkdown>
+    );
   };
-  
-  const loadResponse = (stateAction, response = content, chatsId = latest?.id) => {
+
+  const loadResponse = (
+    stateAction,
+    response = content,
+    chatsId = latest?.id
+  ) => {
     clearInterval(window.interval);
 
     stateAction({ type: "resume", status: true });
@@ -38,96 +46,90 @@ const Chat = forwardRef(({ error }, ref) => {
 
     stopResponse(stateAction);
   };
-  
+
   const stopResponse = (stateAction) => {
     if (contentRef?.current) {
-      contentRef.current.classList.remove('blink')
+      contentRef.current.classList.remove("blink");
     }
-    stateAction({ type: 'resume', status: false })
-    clearInterval(window.interval)
-  }
+    stateAction({ type: "resume", status: false });
+    clearInterval(window.interval);
+  };
 
   useImperativeHandle(ref, () => ({
     stopResponse,
     loadResponse,
     clearResponse: () => {
       if (contentRef?.current) {
-        contentRef.current.innerHTML = ''
-        contentRef?.current?.classList.add("blink")
+        contentRef.current.innerHTML = "";
+        contentRef?.current?.classList.add("blink");
       }
-    }
-  }))
+    },
+  }));
+
+  useEffect(() => {
+    containerRef.current.scrollIntoView();
+  }, [latest, content, all]);
 
   return (
-    <div className='Chat'>
-      {
-        all?.filter((obj) => {
-          return !obj.id ? true : obj?.id !== latest?.id
-        })?.map((obj, key) => {
+    <div className="Chat">
+      {all
+        ?.filter((obj) => {
+          return !obj.id ? true : obj?.id !== latest?.id;
+        })
+        ?.map((obj, key) => {
           return (
             <Fragment key={key}>
-              <div className='qs'>
-                <div className='acc'>
-                  {user?.fName?.charAt(0)}
-                </div>
-                <div className='txt1'>
-                <ReactMarkdown>{obj?.prompt}</ReactMarkdown>
+              <div className="qs">
+                <div className="acc">{user?.fName?.charAt(0)}</div>
+                <div className="txt1">
+                  <ReactMarkdown>{obj?.prompt}</ReactMarkdown>
                 </div>
               </div>
 
               <div className="res">
-                <div className='icon'>
+                <div className="icon">
                   <RobotIcon />
                   {/*<GptIcon />*/}
                 </div>
-                <div className='txt'>
+                <div className="txt">
                   <span>
-                   <ReactMarkdown>
-                    {obj?.content}
-                    </ReactMarkdown>
+                    <ReactMarkdown>{obj?.content}</ReactMarkdown>
                   </span>
                 </div>
               </div>
             </Fragment>
-          )
-        })
-      }
+          );
+        })}
 
-      {
-        latest?.prompt?.length > 0 && (
-          <Fragment>
-            <div className='qs'>
-              <div className='acc'>
-                {user?.fName?.charAt(0)}
-              </div>
-              <div className='txt'>
-              <ReactMarkdown>
-                {latest?.prompt}
-                </ReactMarkdown>
-              </div>
+      {latest?.prompt?.length > 0 && (
+        <Fragment>
+          <div className="qs">
+            <div className="acc">{user?.fName?.charAt(0)}</div>
+            <div className="txt">
+              <ReactMarkdown>{latest?.prompt}</ReactMarkdown>
             </div>
+          </div>
 
-            <div className="res">
-              <div className='icon'>
-                <RobotIcon />
+          <div className="res">
+            <div className="icon">
+              <RobotIcon />
 
-                {/*<GptIcon />*/}
-             
+              {/*<GptIcon />*/}
 
-                {error && <span>!</span>}
-              </div>
-              <div className='txt'>
-                {
-                  error ? <div className="error">
-                    Something went wrong.
-                  </div> : <span ref={contentRef} className="blink" />
-                }
-              </div>
+              {error && <span>!</span>}
             </div>
-          </Fragment>
-        )
-      }
+            <div className="txt">
+              {error ? (
+                <div className="error">Something went wrong.</div>
+              ) : (
+                <span ref={contentRef} className="blink" />
+              )}
+            </div>
+          </div>
+        </Fragment>
+      )}
+      <div ref={containerRef} />
     </div>
-  )
-})
-export default Chat
+  );
+});
+export default Chat;
