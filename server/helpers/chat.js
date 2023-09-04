@@ -158,7 +158,7 @@ const chatHelper = {
             },
           },
           {
-            $limit: 10,
+            $limit: 100,
           },
           {
             $sort: {
