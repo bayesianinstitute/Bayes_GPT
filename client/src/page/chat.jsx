@@ -100,7 +100,7 @@ const Main = () => {
   return (
     <div className="main">
       <div className="contentArea">
-        {status.chat ? <Chat ref={chatRef} error={status.error} /> : <New />}
+        {status.chat ? <Chat ref={chatRef} status={status} error={status.error} /> : <New />}
       </div>
 
       <InputArea status={status} chatRef={chatRef} stateAction={stateAction} />
