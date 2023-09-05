@@ -175,6 +175,9 @@ const InputArea = ({ status, chatRef, stateAction }) => {
 
           chatRef?.current?.loadResponse(stateAction, content, chatsId);
 
+          // Stop animation
+          stateAction({ type: "resume", status: false });
+
           stateAction({ type: "error", status: false });
         }
       }

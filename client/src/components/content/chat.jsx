@@ -2,7 +2,8 @@ import React, {
   forwardRef,
   Fragment,
   useImperativeHandle,
-  useRef,useEffect
+  useRef,
+  useEffect,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { GptIcon } from "../../assets";
@@ -12,10 +13,10 @@ import { insertNew } from "../../redux/messages";
 import "./style.scss";
 import ReactMarkdown from "react-markdown";
 import ReactDOMServer from "react-dom/server";
-const Chat = forwardRef(({ error }, ref) => {
+const Chat = forwardRef(({ error, status }, ref) => {
   const dispatch = useDispatch();
 
-  const contentRef = useRef();
+  const contentRef = useRef(null);
 
   const containerRef = useRef(); // for scroll down
 
@@ -28,7 +29,7 @@ const Chat = forwardRef(({ error }, ref) => {
     );
   };
 
-  const loadResponse = (
+  const loadResponse = async (
     stateAction,
     response = content,
     chatsId = latest?.id
@@ -37,14 +38,21 @@ const Chat = forwardRef(({ error }, ref) => {
 
     stateAction({ type: "resume", status: true });
 
-    contentRef?.current?.classList?.add("blink");
+    const waitForContentRef = async () => {
+      if (contentRef?.current) {
+        contentRef.current.classList.add("blink");
+        let renderedContent = renderMarkdown(response);
+        contentRef.current.innerHTML = `<span style="display: inline-block">${renderedContent}</span>`;
+        dispatch(insertNew({ chatsId, content: response, resume: true }));
+        stopResponse(stateAction);
+      } else {
+        // Wait and try again after a short delay
+        setTimeout(waitForContentRef, 100); // Adjust the delay as needed
+      }
+    };
 
-    let renderedContent = renderMarkdown(response); // Render the entire content at once
-
-    contentRef.current.innerHTML = `<span style="display: inline-block">${renderedContent}</span>`;
-    dispatch(insertNew({ chatsId, content: response, resume: true }));
-
-    stopResponse(stateAction);
+    // Start waiting for contentRef to be defined
+    waitForContentRef();
   };
 
   const stopResponse = (stateAction) => {
@@ -114,15 +122,19 @@ const Chat = forwardRef(({ error }, ref) => {
             <div className="icon">
               <RobotIcon />
 
-              {/*<GptIcon />*/}
-
               {error && <span>!</span>}
             </div>
             <div className="txt">
               {error ? (
                 <div className="error">Something went wrong.</div>
-              ) : (
+              ) : !status?.resume ? (
                 <span ref={contentRef} className="blink" />
+              ) : (
+                <span
+                className="loading-text"
+                >
+                  Loading....
+                </span>
               )}
             </div>
           </div>
