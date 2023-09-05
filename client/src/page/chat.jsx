@@ -102,7 +102,6 @@ const Main = () => {
       <div className="contentArea">
         {status.chat ? <Chat ref={chatRef} status={status} error={status.error} /> : <New />}
       </div>
-
       <InputArea status={status} chatRef={chatRef} stateAction={stateAction} />
     </div>
   );
@@ -119,7 +118,6 @@ const InputArea = ({ status, chatRef, stateAction }) => {
 
   const { prompt, content, _id } = useSelector((state) => state.messages);
 
-
   const [textSubmitted,setTextSubmitted]=useState(false);
 
   const FormHandle = async () => {
@@ -127,7 +125,6 @@ const InputArea = ({ status, chatRef, stateAction }) => {
       stateAction({ type: "chat", status: true });
 
       let chatsId = Date.now();
-      // console.log("chatid in ui",chatsId);
 
       dispatch(insertNew({ id: chatsId, content: "", prompt }));
       chatRef?.current?.clearResponse();
@@ -215,14 +212,14 @@ const InputArea = ({ status, chatRef, stateAction }) => {
           <div className="chatActionsLg">
             {status.chat && content?.length > 0 && status.actionBtns && (
               <>
-                {!status?.resume ? (
-                  <button
+                {!status?.resume ? (null,
+                  {/* <button
                     onClick={() => {
                       chatRef.current.loadResponse(stateAction);
                     }}
                   >
                     <Reload /> Regenerate response
-                  </button>
+                  </button> */}
                 ) : (
                   <button
                     onClick={() => {
