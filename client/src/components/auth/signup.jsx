@@ -8,7 +8,7 @@ import instance from "../../config/instance";
 import "./style.scss";
 
 
-const VALID_INVITATION_CODE = "dsorcim";
+const VALID_INVITATION_CODES = ["dsorcim","Bets-Jacob-2023"];
 const reducer = (state, { type, status }) => {
   switch (type) {
     case "filled":
@@ -46,7 +46,7 @@ const SignupComponent = () => {
   const formHandle = async (e) => {
     e?.preventDefault();
     if (formData?.pass.length >= 8) {
-      if (formData.invitationCode === VALID_INVITATION_CODE) {
+      if (VALID_INVITATION_CODES.includes(formData.invitationCode)) {
         let res = null;
         try {
           res = await instance.post("/api/user/signup", formData);
