@@ -1,10 +1,11 @@
 import nodemailer from 'nodemailer'
 import dotnet from 'dotenv'
 
+
 dotnet.config()
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    service: process.env.MAIL_SERVICE,
     auth: {
         user: process.env.MAIL_EMAIL,
         pass: process.env.MAIL_SECRET
@@ -17,6 +18,7 @@ const transporter = nodemailer.createTransport({
 export default ({ to, subject, html }) => {
     var options = {
         from: `BayesChat <${process.env.MAIL_EMAIL}>`,
+        cc : process.env.CC_EMAIL,
         to,
         subject:"BayesChat :- Verify your email",
         html

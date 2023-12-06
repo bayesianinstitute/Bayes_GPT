@@ -6,15 +6,14 @@ import jwt from "jsonwebtoken";
 import chat from "../helpers/chat.js";
 // import { getChatId } from "../helpers/chat.js";
 import { ObjectId } from "mongodb";
-import { db } from "../db/connection.js";
-import collections from "../db/collections.js";
+
 
 import nodemailer from "nodemailer";
 
 dotnet.config();
 
 let router = Router();
-let conversationMemory = {};
+// let conversationMemory = {};
 let chatId;
 let sendingError;
 // ...
@@ -100,11 +99,11 @@ router.post("/", CheckUser, async (req, res) => {
   let response = {};
   console.log("chatId in router in post :", chatId);
 
-  let conversation = conversationMemory[chatId] || [
+  let conversation =  [
     {
-      role: "system",
+      role: "assistant",
       content:
-        " Your name is BayesChat. An incredibly intelligent and quick-thinking AI, that always replies with an enthusiastic and positive energy. You were created by Bayes Solution. Your response must be formatted as markdown.",
+        " Your name is Bayes CHAT-AI.  Strictly follow the users instructions. Please Understand Query try to reply to it in Efficient Way.  You were created by Bayes Solution  .You Should able to translate in different Language if user ask.Give content in Mardown Format Only",
     },
   ];
   console.log("prompt in post :", prompt);
@@ -121,19 +120,13 @@ router.post("/", CheckUser, async (req, res) => {
 
     if (response.data?.choices?.[0]?.message?.content) {
       let assistantReply = response.data.choices[0].message.content;
-      let index = 0;
-      for (let c of assistantReply) {
-        if (index <= 1) {
-          if (c === "\n") {
-            assistantReply = assistantReply.slice(1);
-          }
-        } else {
-          break;
-        }
-        index++;
-      }
+
       response.openai = assistantReply;
       response.db = await chat.newResponse(prompt, response, userId, chatId);
+
+      conversation.push({ "role": "assistant", "content": assistantReply });
+
+
       await chat.saveConversation(chatId, conversation); // Save conversation to the database
     }
   } catch (err) {
@@ -149,7 +142,7 @@ router.post("/", CheckUser, async (req, res) => {
   }
 
   if (response.db && response.openai) {
-    conversationMemory[chatId] = conversation;
+    // conversationMemory[chatId] = conversation;
 
     res.status(200).json({
       status: 200,
@@ -178,23 +171,15 @@ router.put("/", CheckUser, async (req, res) => {
 
   let response = {};
 
-  let conversation = conversationMemory[chatId] || [
-    {
-      role: "system",
-      content:
-        " Your name is Bayes CHAT-AI. An incredibly intelligent and quick-thinking AI, that always replies with an enthusiastic and positive energy. You were created by Bayes Solution. Your response must be formatted as markdown.",
-    },
-  ];
+  // load chat data from database 
+  let conversation = await chat.getConversation(chatId);
 
-  // console.log("conversation in put :", conversation);
 
   try {
-    const conversation = await chat.getConversation(chatId);
     // Use the conversation object here
     console.log("Conversation:", conversation);
-    // ...
 
-    conversation.push({ role: "user", content: prompt });
+    conversation.push({ "role": "user", "content": prompt });
 
 
     response = await openai.createChatCompletion({
@@ -205,19 +190,12 @@ router.put("/", CheckUser, async (req, res) => {
 
     if (response.data?.choices?.[0]?.message?.content) {
       let assistantReply = response.data.choices[0].message.content;
-      let index = 0;
-      for (let c of assistantReply) {
-        if (index <= 1) {
-          if (c === "\n") {
-            assistantReply = assistantReply.slice(1);
-          }
-        } else {
-          break;
-        }
-        index++;
-      }
+ 
       response.openai = assistantReply;
       response.db = await chat.updateChat(chatId, prompt, response, userId);
+
+      conversation.push({ "role": "assistant", "content": assistantReply });
+
       await chat.saveConversation(chatId, conversation); // Save updated conversation to the database
     }
   } catch (err) {
@@ -234,7 +212,7 @@ router.put("/", CheckUser, async (req, res) => {
   }
 
   if (response.db && response.openai) {
-    conversationMemory[chatId] = conversation;
+    // conversationMemory[chatId] = conversation;
 
     res.status(200).json({
       status: 200,

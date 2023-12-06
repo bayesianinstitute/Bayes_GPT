@@ -158,7 +158,7 @@ const chatHelper = {
             },
           },
           {
-            $limit: 10,
+            $limit: 100,
           },
           {
             $sort: {
@@ -196,13 +196,16 @@ const chatHelper = {
         });
     });
   },
+
+
   saveConversation: (chatId, conversation) => {
     return new Promise((resolve, reject) => {
       db.collection(collections.CONVERSATION)
-        .insertOne({
-          chatId,
-          conversation,
-        })
+        .updateOne(
+          { chatId },
+          { $set: { conversation } },
+          { upsert: true } // This will create a new document if chatId doesn't exist
+        )
         .then((res) => {
           resolve(res);
         })
@@ -211,6 +214,7 @@ const chatHelper = {
         });
     });
   },
+
 
   getConversation: (chatId) => {
     return new Promise((resolve, reject) => {

@@ -1,138 +1,147 @@
 import React, {
   forwardRef,
   Fragment,
-  useImperativeHandle, useRef
-} from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import { GptIcon } from '../../assets'
-import { RobotIcon } from '../../assets'
+  useImperativeHandle,
+  useRef,
+  useEffect,
+} from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { GptIcon } from "../../assets";
+import { RobotIcon } from "../../assets";
 
-import { insertNew } from '../../redux/messages'
-import './style.scss'
+import { insertNew } from "../../redux/messages";
+import "./style.scss";
+import ReactMarkdown from "react-markdown";
+import ReactDOMServer from "react-dom/server";
+const Chat = forwardRef(({ error, status }, ref) => {
+  const dispatch = useDispatch();
 
-const Chat = forwardRef(({ error }, ref) => {
+  const contentRef = useRef(null);
 
-  const dispatch = useDispatch()
+  const containerRef = useRef(); // for scroll down
 
-  const contentRef = useRef()
+  const { user, messages } = useSelector((state) => state);
+  const { latest, content, all } = messages;
 
-  const { user, messages } = useSelector((state) => state)
-  const { latest, content, all } = messages
+  const renderMarkdown = (content) => {
+    return ReactDOMServer.renderToString(
+      <ReactMarkdown>{content}</ReactMarkdown>
+    );
+  };
 
-  const loadResponse = (stateAction,
+  const loadResponse = async (
+    stateAction,
     response = content,
-    chatsId = latest?.id) => {
+    chatsId = latest?.id
+  ) => {
+    clearInterval(window.interval);
 
-    clearInterval(window.interval)
+    stateAction({ type: "resume", status: true });
 
-    stateAction({ type: 'resume', status: true })
-
-    contentRef?.current?.classList?.add("blink")
-
-    let index = 0
-
-    window.interval = setInterval(() => {
-      if (index < response.length && contentRef?.current) {
-        if (index === 0) {
-          dispatch(insertNew({ chatsId, content: response.charAt(index) }))
-          contentRef.current.innerHTML = response.charAt(index)
-        } else {
-          dispatch(insertNew({ chatsId, content: response.charAt(index), resume: true }))
-          contentRef.current.innerHTML += response.charAt(index)
-        }
-        index++
+    const waitForContentRef = async () => {
+      if (contentRef?.current) {
+        contentRef.current.classList.add("blink");
+        let renderedContent = renderMarkdown(response);
+        contentRef.current.innerHTML = `<span style="display: inline-block">${renderedContent}</span>`;
+        dispatch(insertNew({ chatsId, content: response, resume: true }));
+        stopResponse(stateAction);
       } else {
-        stopResponse(stateAction)
+        // Wait and try again after a short delay
+        setTimeout(waitForContentRef, 100); // Adjust the delay as needed
       }
-    }, 20)
+    };
 
-  }
+    // Start waiting for contentRef to be defined
+    waitForContentRef();
+  };
 
   const stopResponse = (stateAction) => {
     if (contentRef?.current) {
-      contentRef.current.classList.remove('blink')
+      contentRef.current.classList.remove("blink");
     }
-    stateAction({ type: 'resume', status: false })
-    clearInterval(window.interval)
-  }
+    stateAction({ type: "resume", status: false });
+    clearInterval(window.interval);
+  };
 
   useImperativeHandle(ref, () => ({
     stopResponse,
     loadResponse,
     clearResponse: () => {
       if (contentRef?.current) {
-        contentRef.current.innerHTML = ''
-        contentRef?.current?.classList.add("blink")
+        contentRef.current.innerHTML = "";
+        contentRef?.current?.classList.add("blink");
       }
-    }
-  }))
+    },
+  }));
+
+  useEffect(() => {
+    containerRef.current.scrollIntoView();
+  }, [latest, content, all]);
 
   return (
-    <div className='Chat'>
-      {
-        all?.filter((obj) => {
-          return !obj.id ? true : obj?.id !== latest?.id
-        })?.map((obj, key) => {
+    <div className="Chat">
+      {all
+        ?.filter((obj) => {
+          return !obj.id ? true : obj?.id !== latest?.id;
+        })
+        ?.map((obj, key) => {
           return (
             <Fragment key={key}>
-              <div className='qs'>
-                <div className='acc'>
-                  {user?.fName?.charAt(0)}
-                </div>
-                <div className='txt'>
-                  {obj?.prompt}
+              <div className="qs">
+                <div className="acc">{user?.fName?.charAt(0)}</div>
+                <div className="txt1">
+                  <ReactMarkdown>{obj?.prompt}</ReactMarkdown>
                 </div>
               </div>
 
               <div className="res">
-                <div className='icon'>
+                <div className="icon">
                   <RobotIcon />
                   {/*<GptIcon />*/}
                 </div>
-                <div className='txt'>
+                <div className="txt">
                   <span>
-                    {obj?.content}
+                    <ReactMarkdown>{obj?.content}</ReactMarkdown>
                   </span>
                 </div>
               </div>
             </Fragment>
-          )
-        })
-      }
+          );
+        })}
 
-      {
-        latest?.prompt?.length > 0 && (
-          <Fragment>
-            <div className='qs'>
-              <div className='acc'>
-                {user?.fName?.charAt(0)}
-              </div>
-              <div className='txt'>
-                {latest?.prompt}
-              </div>
+      {latest?.prompt?.length > 0 && (
+        <Fragment>
+          <div className="qs">
+            <div className="acc">{user?.fName?.charAt(0)}</div>
+            <div className="txt">
+              <ReactMarkdown>{latest?.prompt}</ReactMarkdown>
             </div>
+          </div>
 
-            <div className="res">
-              <div className='icon'>
-                <RobotIcon />
+          <div className="res">
+            <div className="icon">
+              <RobotIcon />
 
-                {/*<GptIcon />*/}
-             
-
-                {error && <span>!</span>}
-              </div>
-              <div className='txt'>
-                {
-                  error ? <div className="error">
-                    Something went wrong. If this issue persists please contact us through our help center at help.openai.com.
-                  </div> : <span ref={contentRef} className="blink" />
-                }
-              </div>
+              {error && <span>!</span>}
             </div>
-          </Fragment>
-        )
-      }
+            <div className="txt">
+              {error ? (
+                <div className="error">Something went wrong.</div>
+              ) : !status?.resume ? (
+                <span ref={contentRef} className="blink" />
+              ) : (
+                <span
+                className="loading-text"
+                >
+                  Loading....
+                </span>
+              )}
+            </div>
+          </div>
+        </Fragment>
+      )}
+      <div ref={containerRef} />
     </div>
-  )
-})
-export default Chat
+  );
+});
+export default Chat;

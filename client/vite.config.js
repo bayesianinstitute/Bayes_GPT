@@ -7,12 +7,14 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://69.12.74.163:5000/api",
+        target: "http://chat.bayes.global:5000/api",
         changeOrigin: true,
+        secure: false,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
-    },
+      },
   },
+  
   plugins: [
     react(),
     VitePWA({

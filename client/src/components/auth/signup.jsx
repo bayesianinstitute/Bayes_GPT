@@ -7,7 +7,9 @@ import axios from "axios";
 import instance from "../../config/instance";
 import "./style.scss";
 
-const VALID_INVITATION_CODE = "lozenges23";
+
+
+const VALID_INVITATION_CODES = ["lozenges23","Letsgoones"];
 const reducer = (state, { type, status }) => {
   switch (type) {
     case "filled":
@@ -45,7 +47,8 @@ const SignupComponent = () => {
   const formHandle = async (e) => {
     e?.preventDefault();
     if (formData?.pass.length >= 8) {
-      if (formData.invitationCode === VALID_INVITATION_CODE) {
+      if (VALID_INVITATION_CODES.includes(formData.invitationCode)) {
+        // The invitation code is valid, continue with the sign-up process
         let res = null;
         try {
           res = await instance.post("/api/user/signup", formData);
