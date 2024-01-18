@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom'
 import { activePage, addHistory } from '../../redux/history'
 import instance from '../../config/instance'
 import './style.scss'
+import axios from 'axios';
 
 const Menu = ({ changeColorMode }) => {
   let path = window.location.pathname
@@ -231,6 +232,26 @@ const Modal = ({ changeColorMode, settingRef }) => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
+  const [selectedModel, setSelectedModel] = useState('gpt-3.5'); // Default model type
+
+  const handleModelChange = (event) => {
+    setSelectedModel(event.target.value);
+    setModelTypeAPI(selectedModel);
+  };
+
+  const setModelTypeAPI = async (newModelType) => {
+    // Make an API call to set the new model type using Axios
+    try {
+      const response = await axios.post('/api/user/modelType', {
+        modelType: newModelType,
+      });
+
+      console.log('Model type set successfully:', response.data);
+    } catch (error) {
+      console.error('Error while setting model type:', error.message);
+    }
+  }
+
   const deleteAccount = async () => {
     if (window.confirm("Do you want delete your account")) {
 
@@ -283,6 +304,14 @@ const Modal = ({ changeColorMode, settingRef }) => {
             role='switch' type='button'>
             <div></div>
           </button>
+
+          {/* Dropdown menu for selecting the model */}
+
+          <p>Select Model:</p>
+          <select value={selectedModel} onChange={handleModelChange}>
+            <option value="gpt-3.5">GPT-3.5</option>
+            <option value="gpt-4">GPT-4</option>
+          </select>
         </div>
         <div className="bottum">
           {/* <button>Export data</button> */}
