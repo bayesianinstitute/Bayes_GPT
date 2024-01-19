@@ -232,7 +232,7 @@ const Modal = ({ changeColorMode, settingRef }) => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
-  const [selectedModel, setSelectedModel] = useState('gpt-3.5'); // Default model type
+  const [selectedModel, setSelectedModel] = useState('gpt-3.5-turbo'); // Default model type
 
   const handleModelChange = (event) => {
     setSelectedModel(event.target.value);
@@ -242,7 +242,7 @@ const Modal = ({ changeColorMode, settingRef }) => {
   const setModelTypeAPI = async (newModelType) => {
     // Make an API call to set the new model type using Axios
     try {
-      const response = await axios.post('/api/user/modelType', {
+      const response = await axios.put('/api/chat/modelType', {
         modelType: newModelType,
       });
 
@@ -309,8 +309,8 @@ const Modal = ({ changeColorMode, settingRef }) => {
 
           <p>Select Model:</p>
           <select value={selectedModel} onChange={handleModelChange}>
-            <option value="gpt-3.5">GPT-3.5</option>
-            <option value="gpt-4">GPT-4</option>
+            <option value="gpt-3.5-turbo">GPT-3.5-Turbo</option>
+            <option value="gpt-3.5-turbo">GPT-4-Preview</option>
           </select>
         </div>
         <div className="bottum">

@@ -69,6 +69,7 @@ const chatHelper = {
       }
     });
   },
+
   updateChat: (chatId, prompt, { openai }, userId) => {
     return new Promise(async (resolve, reject) => {
       let res = await db
@@ -197,7 +198,6 @@ const chatHelper = {
     });
   },
 
-
   saveConversation: (chatId, conversation) => {
     return new Promise((resolve, reject) => {
       db.collection(collections.CONVERSATION)
@@ -234,6 +234,52 @@ const chatHelper = {
         });
     });
   },
+
+
+
+  saveModelType: (userId, modelType={ defaultValue: 'gpt-3.5-turbo' }) => {
+    return new Promise((resolve, reject) => {
+      db.collection(collections.SETTING)
+        .updateOne(
+          { userId },
+          { $set: { modelType } },
+          { upsert: true } // This will create a new document if userId doesn't exist
+        )
+        .then((res) => {
+          resolve(res);
+          console.log(res);
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    });
+  },
+
+  getModelType: (userId, defaultValue = { defaultValue: 'gpt-3.5-turbo' }) => {
+    return new Promise((resolve, reject) => {
+      db.collection(collections.SETTING)
+        .findOne({
+          userId,
+        })
+        .then((res) => {
+          if (res) {
+            resolve(res.modelType);
+            console.log("found model type " + res.modelType);
+          } else {
+            // Return the default value if modelType is not found
+            resolve(defaultValue);
+            console.log("default model type " + res.modelType);
+
+          }
+        })
+        .catch((err) => {
+          reject(err);
+        });
+    });
+  },
+  
+
 };
+
 
 export default chatHelper;
