@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
-import { GptIcon } from "../assets";
 import { RobotIcon } from "../assets";
 import { LoginComponent } from "../components";
 import { setLoading } from "../redux/loading";
-import ReCAPTCHA from "react-google-recaptcha";
 import "./style.scss";
 
 const Login = () => {
@@ -47,7 +45,6 @@ const Login = () => {
         ) : (
           <div className="suggection">
             <div>
-              {/*<GptIcon />*/}
               <RobotIcon />
             </div>
 

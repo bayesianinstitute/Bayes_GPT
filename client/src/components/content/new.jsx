@@ -1,7 +1,5 @@
 import React, { memo } from 'react'
 import { useDispatch } from 'react-redux'
-import { Sun, Thunder, Warning } from '../../assets'
-import { livePrompt } from '../../redux/messages'
 import './style.scss'
 
 const New = memo(() => {

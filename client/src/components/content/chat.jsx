@@ -6,7 +6,6 @@ import React, {
   useEffect,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { GptIcon } from "../../assets";
 import { RobotIcon } from "../../assets";
 
 import { insertNew } from "../../redux/messages";
