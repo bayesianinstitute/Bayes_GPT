@@ -91,8 +91,7 @@ router.get("/", (req, res) => {
 const openai = new OpenAIApi(configuration);
 // Example API endpoint to get and update model type
 router.get("/modelType", CheckUser,async (req, res) => {
-  const userId = req.params.userId;
-
+  const userId = req.body.userId;
   try {
     // Call your getModelType function
     const modelType = await chat.getModelType(userId);
@@ -114,7 +113,6 @@ router.get("/modelType", CheckUser,async (req, res) => {
 router.put("/modelType",CheckUser, async (req, res) => {
   const userId = req.body.userId;
   const modelType = req.body.modelType;
-  console.log("modelType: " + modelType);
   try {
     // Call your saveModelType function
     await chat.saveModelType(userId, modelType);
@@ -212,8 +210,8 @@ router.post("/", CheckUser, async (req, res) => {
 
 router.put("/", CheckUser, async (req, res) => {
   const { prompt, userId, chatId } = req.body;
-  console.log("chatId in router in put :", chatId);
-  console.log("prompt in put :", prompt);
+  // console.log("chatId in router in put :", chatId);
+  // console.log("prompt in put :", prompt);
 
   let response = {};
 
@@ -227,7 +225,7 @@ router.put("/", CheckUser, async (req, res) => {
   try {
 
     // Use the conversation object here
-    console.log("Conversation:", conversation);
+    // console.log("Conversation:", conversation);
 
     conversation.push({ "role": "user", "content": prompt });
 
