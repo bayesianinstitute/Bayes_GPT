@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom'
 import { activePage, addHistory } from '../../redux/history'
 import instance from '../../config/instance'
 import './style.scss'
+import axios from 'axios';
 
 const Menu = ({ changeColorMode }) => {
   let path = window.location.pathname
@@ -231,6 +232,45 @@ const Modal = ({ changeColorMode, settingRef }) => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
+  const [selectedModel, setSelectedModel] = useState(''); 
+
+  useEffect(() => {
+    const getModelType = async () => {
+      try {
+        const response = await axios.get('/api/chat/modelType');
+        console.log("Respose : ",response.data.data.modelType);
+        setSelectedModel(response.data.data.modelType);
+        console.log("UseEffect",selectedModel)
+      } catch (error) {
+        console.error('Error while fetching model type:', error.message);
+        setSelectedModel('gpt-3.5-turbo');
+      }
+    };
+
+    getModelType();
+  }, []); 
+
+  const handleModelChange = async (event) => {
+    const newModelType = event.target.value;
+    setSelectedModel(newModelType);
+    await setModelTypeAPI(newModelType);
+    console.log('Model changed', newModelType);
+  };
+  
+
+  const setModelTypeAPI = async (newModelType) => {
+    // Make an API call to set the new model type using Axios
+    try {
+      const response = await axios.put('/api/chat/modelType', {
+        modelType: newModelType,
+      });
+
+      console.log('Model type set successfully:', response.data);
+    } catch (error) {
+      console.error('Error while setting model type:', error.message);
+    }
+  }
+
   const deleteAccount = async () => {
     if (window.confirm("Do you want delete your account")) {
 
@@ -283,6 +323,14 @@ const Modal = ({ changeColorMode, settingRef }) => {
             role='switch' type='button'>
             <div></div>
           </button>
+
+          {/* Dropdown menu for selecting the model */}
+
+          <p>Select Model:</p>
+          <select value={selectedModel} onChange={handleModelChange}>
+            <option value="gpt-3.5-turbo">GPT-3.5-Turbo</option>
+            <option value="gpt-4-1106-preview">GPT-4-Preview</option>
+          </select>
         </div>
         <div className="bottum">
           {/* <button>Export data</button> */}

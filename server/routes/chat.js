@@ -7,17 +7,13 @@ import chat from "../helpers/chat.js";
 // import { getChatId } from "../helpers/chat.js";
 import { ObjectId } from "mongodb";
 
-
 import nodemailer from "nodemailer";
 
 dotnet.config();
 
 let router = Router();
-// let conversationMemory = {};
 let chatId;
 let sendingError;
-// ...
-
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -86,11 +82,51 @@ const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const openai = new OpenAIApi(configuration);
-
 router.get("/", (req, res) => {
   res.send("Welcome to chatGPT api v1");
 });
+
+const openai = new OpenAIApi(configuration);
+// Example API endpoint to get and update model type
+router.get("/modelType", CheckUser, async (req, res) => {
+  const userId = req.body.userId;
+  try {
+    // Call your getModelType function
+    const modelType = await chat.getModelType(userId);
+
+    res.status(200).json({
+      status: 200,
+      data: {
+        modelType,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: 500,
+      message: err,
+    });
+  }
+});
+
+router.put("/modelType", CheckUser, async (req, res) => {
+  const userId = req.body.userId;
+  const modelType = req.body.modelType;
+  try {
+    // Call your saveModelType function
+    await chat.saveModelType(userId, modelType);
+
+    res.status(200).json({
+      status: 200,
+      message: "Model type updated successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: 500,
+      message: err,
+    });
+  }
+});
+
 router.post("/", CheckUser, async (req, res) => {
   const { prompt, userId } = req.body;
 
@@ -99,7 +135,7 @@ router.post("/", CheckUser, async (req, res) => {
   let response = {};
   console.log("chatId in router in post :", chatId);
 
-  let conversation =  [
+  let conversation = [
     {
       role: "assistant",
       content:
@@ -109,10 +145,13 @@ router.post("/", CheckUser, async (req, res) => {
   console.log("prompt in post :", prompt);
 
   try {
+    const modelType = await chat.getModelType(userId);
+    console.log("modelType in post :", modelType);
+
     conversation.push({ role: "user", content: prompt });
 
     response = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
+      model: modelType,
       messages: conversation,
       temperature: 0.6,
     });
@@ -124,8 +163,7 @@ router.post("/", CheckUser, async (req, res) => {
       response.openai = assistantReply;
       response.db = await chat.newResponse(prompt, response, userId, chatId);
 
-      conversation.push({ "role": "assistant", "content": assistantReply });
-
+      conversation.push({ role: "assistant", content: assistantReply });
 
       await chat.saveConversation(chatId, conversation); // Save conversation to the database
     }
@@ -166,35 +204,35 @@ router.post("/", CheckUser, async (req, res) => {
 
 router.put("/", CheckUser, async (req, res) => {
   const { prompt, userId, chatId } = req.body;
-  console.log("chatId in router in put :", chatId);
-  console.log("prompt in put :", prompt);
+  // console.log("chatId in router in put :", chatId);
+  // console.log("prompt in put :", prompt);
 
   let response = {};
 
-  // load chat data from database 
+  // load chat data from database
   let conversation = await chat.getConversation(chatId);
-
+  let modelType = await chat.getModelType(userId);
+  console.log("modelType in post :", modelType);
 
   try {
     // Use the conversation object here
-    console.log("Conversation:", conversation);
+    // console.log("Conversation:", conversation);
 
-    conversation.push({ "role": "user", "content": prompt });
-
+    conversation.push({ role: "user", content: prompt });
 
     response = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
+      model: modelType,
       messages: conversation,
       temperature: 0.6,
     });
 
     if (response.data?.choices?.[0]?.message?.content) {
       let assistantReply = response.data.choices[0].message.content;
- 
+
       response.openai = assistantReply;
       response.db = await chat.updateChat(chatId, prompt, response, userId);
 
-      conversation.push({ "role": "assistant", "content": assistantReply });
+      conversation.push({ role: "assistant", content: assistantReply });
 
       await chat.saveConversation(chatId, conversation); // Save updated conversation to the database
     }
