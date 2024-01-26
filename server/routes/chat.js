@@ -4,41 +4,15 @@ import { Configuration, OpenAIApi } from "openai";
 import user from "../helpers/user.js";
 import jwt from "jsonwebtoken";
 import chat from "../helpers/chat.js";
-// import { getChatId } from "../helpers/chat.js";
 import { ObjectId } from "mongodb";
 
-
-import nodemailer from "nodemailer";
+import { sendErrorEmail } from "../mail/send.js";
 
 dotnet.config();
 
 let router = Router();
 let chatId;
 let sendingError;
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.MAIL_EMAIL,
-    pass: process.env.MAIL_SECRET,
-  },
-});
-
-const sendErrorEmail = (error) => {
-  const mailOptions = {
-    from: process.env.MAIL_EMAIL,
-    to: process.env.MONITOR_EMAIL,
-    subject: "Error Occurred",
-    text: error.toString(),
-  };
-
-  transporter.sendMail(mailOptions, (err, info) => {
-    if (err) {
-      console.error("Error sending email:", err);
-    } else {
-      console.log("Email sent:", info.response);
-    }
-  });
-};
 
 const CheckUser = async (req, res, next) => {
   jwt.verify(
@@ -87,10 +61,9 @@ router.get("/", (req, res) => {
   res.send("Welcome to chatGPT api v1");
 });
 
-
 const openai = new OpenAIApi(configuration);
 // Example API endpoint to get and update model type
-router.get("/modelType", CheckUser,async (req, res) => {
+router.get("/modelType", CheckUser, async (req, res) => {
   const userId = req.body.userId;
   try {
     // Call your getModelType function
@@ -110,7 +83,7 @@ router.get("/modelType", CheckUser,async (req, res) => {
   }
 });
 
-router.put("/modelType",CheckUser, async (req, res) => {
+router.put("/modelType", CheckUser, async (req, res) => {
   const userId = req.body.userId;
   const modelType = req.body.modelType;
   try {
@@ -129,9 +102,6 @@ router.put("/modelType",CheckUser, async (req, res) => {
   }
 });
 
-
-
-
 router.post("/", CheckUser, async (req, res) => {
   const { prompt, userId } = req.body;
 
@@ -140,7 +110,7 @@ router.post("/", CheckUser, async (req, res) => {
   let response = {};
   console.log("chatId in router in post :", chatId);
 
-  let conversation =  [
+  let conversation = [
     {
       role: "assistant",
       content:
@@ -150,7 +120,7 @@ router.post("/", CheckUser, async (req, res) => {
   console.log("prompt in post :", prompt);
 
   try {
-    const modelType =await chat.getModelType(userId);
+    const modelType = await chat.getModelType(userId);
     console.log("modelType in post :", modelType);
 
     conversation.push({ role: "user", content: prompt });
@@ -160,7 +130,7 @@ router.post("/", CheckUser, async (req, res) => {
       messages: conversation,
       temperature: 0.6,
     });
-    // console.log("response in post :", response);
+    console.log("response in post :", response);
 
     if (response.data?.choices?.[0]?.message?.content) {
       let assistantReply = response.data.choices[0].message.content;
@@ -168,8 +138,7 @@ router.post("/", CheckUser, async (req, res) => {
       response.openai = assistantReply;
       response.db = await chat.newResponse(prompt, response, userId, chatId);
 
-      conversation.push({ "role": "assistant", "content": assistantReply });
-
+      conversation.push({ role: "assistant", content: assistantReply });
 
       await chat.saveConversation(chatId, conversation); // Save conversation to the database
     }
@@ -215,20 +184,16 @@ router.put("/", CheckUser, async (req, res) => {
 
   let response = {};
 
-  // load chat data from database 
+  // load chat data from database
   let conversation = await chat.getConversation(chatId);
-  let modelType =await chat.getModelType(userId);
+  let modelType = await chat.getModelType(userId);
   console.log("modelType in post :", modelType);
 
-
-
   try {
-
     // Use the conversation object here
     // console.log("Conversation:", conversation);
 
-    conversation.push({ "role": "user", "content": prompt });
-
+    conversation.push({ role: "user", content: prompt });
 
     response = await openai.createChatCompletion({
       model: modelType,
@@ -238,11 +203,11 @@ router.put("/", CheckUser, async (req, res) => {
 
     if (response.data?.choices?.[0]?.message?.content) {
       let assistantReply = response.data.choices[0].message.content;
- 
+
       response.openai = assistantReply;
       response.db = await chat.updateChat(chatId, prompt, response, userId);
 
-      conversation.push({ "role": "assistant", "content": assistantReply });
+      conversation.push({ role: "assistant", content: assistantReply });
 
       await chat.saveConversation(chatId, conversation); // Save updated conversation to the database
     }
@@ -361,5 +326,74 @@ router.delete("/all", CheckUser, async (req, res) => {
     }
   }
 });
+router.post("/generateInvitationCodes", async (req, res) => {
+  const { n, partner_name } = req.body; // Assuming 'n' is the number of codes to generate
 
+  try {
+    if (!n || isNaN(n) || n <= 0 || !partner_name) {
+      return res
+        .status(400)
+        .json({ error: "Invalid or missing values for n or partner_name." });
+    }
+
+    const result = await chat.generateAndInsertInvitationCodes(
+      parseInt(n),
+      partner_name
+    );
+    console.log(result);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/fetchInvitationCodesByPartnerName", async (req, res) => {
+  const { partner_name } = req.body;
+
+  try {
+    if (!partner_name) {
+      return res
+        .status(400)
+        .json({ error: "Invalid or missing partner_name." });
+    }
+
+    const codes = await chat.fetchInvitationCodesByPartnerName(partner_name);
+    res.status(200).json({ codes });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/checkCodeAvailability", async (req, res) => {
+  const { code } = req.body;
+
+  try {
+    if (!code) {
+      return res.status(400).json({ error: "Invalid or missing code." });
+    }
+
+    const result = await chat.checkCodeAvailability(code);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+router.post("/deleteCode", async (req, res) => {
+  const { code, userId } = req.body;
+
+  try {
+    if (!code) {
+      return res.status(400).json({ error: "Invalid or missing code." });
+    }
+
+    const result = await chat.deleteCode(userId, code);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 export default router;
