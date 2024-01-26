@@ -4,4 +4,6 @@ export default {
     TEMP: 'temp',
     CONVERSATION: "conversation",
     SETTING : "setting",
+    INVITATION: "invitation",    
+
 }

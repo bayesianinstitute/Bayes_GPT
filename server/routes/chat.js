@@ -7,37 +7,13 @@ import chat from "../helpers/chat.js";
 // import { getChatId } from "../helpers/chat.js";
 import { ObjectId } from "mongodb";
 
-import nodemailer from "nodemailer";
+import { sendErrorEmail } from "../mail/send.js";
 
 dotnet.config();
 
 let router = Router();
 let chatId;
 let sendingError;
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.MAIL_EMAIL,
-    pass: process.env.MAIL_SECRET,
-  },
-});
-
-const sendErrorEmail = (error) => {
-  const mailOptions = {
-    from: process.env.MAIL_EMAIL,
-    to: process.env.MONITOR_EMAIL,
-    subject: "Error Occurred",
-    text: error.toString(),
-  };
-
-  transporter.sendMail(mailOptions, (err, info) => {
-    if (err) {
-      console.error("Error sending email:", err);
-    } else {
-      console.log("Email sent:", info.response);
-    }
-  });
-};
 
 const CheckUser = async (req, res, next) => {
   jwt.verify(
@@ -351,5 +327,67 @@ router.delete("/all", CheckUser, async (req, res) => {
     }
   }
 });
+router.post("/generateInvitationCodes", async (req, res) => {
+  const { n, partner_name } = req.body; // Assuming 'n' is the number of codes to generate
 
+  try {
+    if (!n || isNaN(n) || n <= 0 || !partner_name) {
+      return res.status(400).json({ error: 'Invalid or missing values for n or partner_name.' });
+    }
+
+    const result = await chat.generateAndInsertInvitationCodes(parseInt(n), partner_name);
+    console.log(result);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+router.post("/fetchInvitationCodesByPartnerName", async (req, res) => {
+  const { partner_name } = req.body;
+
+  try {
+    if (!partner_name) {
+      return res.status(400).json({ error: 'Invalid or missing partner_name.' });
+    }
+
+    const codes = await chat.fetchInvitationCodesByPartnerName(partner_name);
+    res.status(200).json({ codes });
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+router.post("/checkCodeAvailability", async (req, res) => {
+  const { code } = req.body;
+
+  try {
+    if (!code) {
+      return res.status(400).json({ error: 'Invalid or missing code.' });
+    }
+
+    const result = await chat.checkCodeAvailability(code);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+router.post("/deleteCode", async (req, res) => {
+  const { code,userId } = req.body;
+
+  try {
+    if (!code) {
+      return res.status(400).json({ error: 'Invalid or missing code.' });
+    }
+
+    const result = await chat.deleteCode(userId,code);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 export default router;
