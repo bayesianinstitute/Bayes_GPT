@@ -163,8 +163,9 @@ export default {
         console.log("data: ", data);
         let { pass, email, inviteCode } = data;
         email = email.replace("_register", "");
-
+        let modelType="gpt-3.5-turbo"
         let res = null;
+        let uid = new ObjectId(_id);
         try {
           // Calculate expiration date (30 days from now)
           const expirationDate = new Date();
@@ -178,12 +179,13 @@ export default {
             reject({ message: `Code ${inviteCode} not found.` });
             return;
           }
+
+         
           await db
             .collection(collections.USER)
             .createIndex({ email: 1 }, { unique: true });
-          console.log("befor ", res);
           res = await db.collection(collections.USER).insertOne({
-            _id: new ObjectId(_id),
+            _id: uid,
             email: email,
             fName: fName,
             lName: lName,
@@ -194,6 +196,14 @@ export default {
           });
 
           console.log("res :", res);
+          
+          const setting =await db.collection(collections.SETTING)
+          .insertOne({
+              userId : uid  ,
+              modelType : modelType,
+            });
+
+          console.log("Setting : ", setting);
 
           const result = await db
             .collection(collections.INVITATION)
