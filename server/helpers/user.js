@@ -163,7 +163,7 @@ export default {
         console.log("data: ", data);
         let { pass, email, inviteCode } = data;
         email = email.replace("_register", "");
-        let modelType="gpt-3.5-turbo"
+        let modelType="gpt-4-1106-preview"
         let res = null;
         let uid = new ObjectId(_id);
         try {
