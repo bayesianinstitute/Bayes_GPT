@@ -243,7 +243,7 @@ const Modal = ({ changeColorMode, settingRef }) => {
         console.log("UseEffect",selectedModel)
       } catch (error) {
         console.error('Error while fetching model type:', error.message);
-        setSelectedModel('gpt-3.5-turbo');
+        setSelectedModel('gpt-4-1106-preview');
       }
     };
 
