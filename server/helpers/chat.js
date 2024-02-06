@@ -1,8 +1,7 @@
 import { db } from "../db/connection.js";
 import collections from "../db/collections.js";
 import { ObjectId } from 'mongodb';
-
-let chatId; // Declare the chatId variable outside the exported object
+import { v4 as uuidv4 } from 'uuid';
 
 const chatHelper = {
   newResponse: (prompt, { openai }, userId,chatId) => {
