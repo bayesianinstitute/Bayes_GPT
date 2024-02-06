@@ -1,6 +1,6 @@
 import { db } from "../db/connection.js";
 import collections from "../db/collections.js";
-import { ObjectId } from "mongodb";
+import { ObjectId } from 'mongodb';
 
 let chatId; // Declare the chatId variable outside the exported object
 
@@ -264,7 +264,7 @@ const chatHelper = {
         .then((res) => {
           if (res) {
             resolve(res.modelType);
-            console.log("found model type " + res.modelType);
+            // console.log("found model type " + res.modelType);
           } else {
             // Return the default value if modelType is not found
             resolve(defaultValue);
@@ -286,7 +286,7 @@ const chatHelper = {
         const codes = Array.from({ length: n }, () => {
           let code;
           do {
-            code = Math.floor(Math.random() * 900000) + 100000;
+             code = uuidv4(); // Generating UUID
           } while (existingCodes.includes(code.toString()));
   
           return code.toString();
@@ -306,8 +306,50 @@ const chatHelper = {
     });
   },
   
+  updateInvitationCode: async (userId, invitationCode) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Check if the invitation code exists in INVITATION collection
+        const invitationExists = await db.collection(collections.INVITATION).findOne({ codes: invitationCode });
+        console.log(invitationExists)
+        if (invitationExists) {
+          // Update USER collection
+          const userUpdateResult = await db.collection(collections.USER).updateOne(
+            { _id: new ObjectId(userId) },
+            {
+              $set: {
+                inviteCode: invitationCode,
+                expireAt: new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000),
+              },
+            }
+          );
   
+          console.log("userUpdateResult", userUpdateResult);
   
+          if (userUpdateResult.modifiedCount > 0) {
+            // Remove the code from INVITATION collection
+            const removeCodeResult = await db.collection(collections.INVITATION).updateOne(
+              { codes: invitationCode },
+              { $pull: { codes: invitationCode } }
+            );
+  
+            console.log("removeCodeResult", removeCodeResult);
+  
+            resolve({ success: true, message: 'Invitation code updated successfully.' });
+          } else {
+            reject(new Error('User not found or invitationCode not updated.'));
+          }
+        } else {
+          reject(new Error('Invitation code not found in INVITATION collection.'));
+        }
+      } catch (error) {
+        console.error('Error updating invitation code:', error);
+        reject(error);
+      }
+    });
+  },
+  
+
   fetchInvitationCodesByPartnerName: (partner_name) => {
     return new Promise(async (resolve, reject) => {
       try {
@@ -388,9 +430,24 @@ const chatHelper = {
       }
     });
   },
+  getUserDetails: async (userId) => {
+   
+    return new Promise(async (resolve, reject) => {
+    
+        const user = await db.collection(collections.USER).findOne({ _id: new ObjectId(userId) });  
+        
+        
+        if (!user) {
+          reject("User not found");
+          return;
+        }
+        resolve(user);
+  
+    });
+  },
+  
 
 };
 
 
 export default chatHelper;
-

@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import chat from "../helpers/chat.js";
 import { ObjectId } from "mongodb";
 
+
 import { sendErrorEmail } from "../mail/send.js";
 
 dotnet.config();
@@ -326,6 +327,42 @@ router.delete("/all", CheckUser, async (req, res) => {
     }
   }
 });
+
+router.get("/userDetails", CheckUser, async (req, res) => {
+  const userId = req.body.userId;
+
+  try {
+    const user = await chat.getUserDetails(userId);
+   
+    if (!user) {
+      res.status(404).json({
+        status: false,
+        message: "User not found",
+      });
+      return;
+    }
+
+    const currentDate = new Date();
+    const isExpired = currentDate > new Date(user.expireAt);
+
+    const userDetails = {
+      status: !isExpired,
+      fName: user.fName,
+      lName: user.lName,
+      expireAt:  user.expireAt,
+      inviteCode: user.inviteCode
+      
+    };
+
+    res.status(200).json(userDetails);
+  } catch (err) {
+    res.status(500).json({
+      status: false,
+      message: err,
+    });
+  }
+});
+
 router.post("/generateInvitationCodes", async (req, res) => {
   const { n, partner_name } = req.body; // Assuming 'n' is the number of codes to generate
 
@@ -345,6 +382,25 @@ router.post("/generateInvitationCodes", async (req, res) => {
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+router.put("/update-invitation-code", CheckUser, async (req, res) => {
+  const userId = req.body.userId;
+  const invitationCode = req.body.code;
+  console.log(invitationCode);
+  console.log("UserId ",userId);
+
+  try {
+    // Call your updateInvitationCode function
+    const update = await chat.updateInvitationCode(userId, invitationCode);
+
+    res.status(200).json({ update });
+  } catch (err) {
+    console.error('Error updating invitation code:', err); // Log the error
+    res.status(500).json({
+      status: 500,
+      message: err || 'Internal Server Error',
+    });
   }
 });
 

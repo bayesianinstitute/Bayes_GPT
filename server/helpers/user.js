@@ -462,19 +462,19 @@ export default {
           return;
         }
 
-        const currentDate = new Date();
-        const expireCodeTime = user.expireAt;
-        console.log(expireCodeTime);
+        // const currentDate = new Date();
+        // const expireCodeTime = user.expireAt;
+        // console.log(expireCodeTime);
 
 
-        // Check if expiration date has passed
-        if (expireCodeTime && currentDate > expireCodeTime) {
-          let mess=`Invitation code has expired . please subscribe new code to continue`
-          console.log(mess)
-          // sendErrorEmail(mess)
-          reject({ status: 410,expired: true, text: "Invitation code has expired" });
-          return;
-        }
+        // // Check if expiration date has passed
+        // if (expireCodeTime && currentDate > expireCodeTime) {
+        //   let mess=`Invitation code has expired . please subscribe new code to continue`
+        //   console.log(mess)
+        //   // sendErrorEmail(mess)
+        //   reject({ status: 410,expired: true, text: "Invitation code has expired" });
+        //   return;
+        // }
 
         resolve(user);
       } catch (err) {

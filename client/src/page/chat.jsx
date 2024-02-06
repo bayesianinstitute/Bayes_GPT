@@ -48,9 +48,11 @@ const Main = () => {
 
   const chatRef = useRef();
 
-  const { user } = useSelector((state) => state);
 
   const { id = null } = useParams();
+
+  const { user } = useSelector((state) => state);
+  const isUserExpired = user.expireAt && new Date(user.expireAt) < new Date();
 
   const [status, stateAction] = useReducer(reducer, {
     chat: false,
@@ -100,9 +102,18 @@ const Main = () => {
   return (
     <div className="main">
       <div className="contentArea">
-        {status.chat ? <Chat ref={chatRef} status={status} error={status.error} /> : <New />}
+        {status.chat ? (
+          <Chat ref={chatRef} status={status} error={status.error} />
+        ) : (
+          <New />
+        )}
       </div>
       <InputArea status={status} chatRef={chatRef} stateAction={stateAction} />
+      {isUserExpired && (
+        <div className="expiredAlert">
+          <p>Your invitation code has expired. Please update it to continue.Goto Setting and then Update Invitation Code</p>
+        </div>
+      )}
     </div>
   );
 };
@@ -115,6 +126,10 @@ const InputArea = ({ status, chatRef, stateAction }) => {
   const navigate = useNavigate();
 
   const dispatch = useDispatch();
+
+  const { user } = useSelector((state) => state);
+  const isUserExpired = user.expireAt && new Date(user.expireAt) < new Date();
+
 
   const { prompt, content, _id } = useSelector((state) => state.messages);
 
@@ -235,16 +250,17 @@ const InputArea = ({ status, chatRef, stateAction }) => {
 
           <div className="flexBody">
             <div className="box">
-              <textarea
-                placeholder="Press Ctrl+Enter To Submit..."
-                ref={textAreaRef}
-                value={prompt}
-                onChange={(e) => {
-                  dispatch(livePrompt(e.target.value));
-                }}
-                onKeyDown={handleKeyDown} // Call handleKeyDown when a key is pressed
 
-              />
+            <textarea
+                    placeholder="Press Ctrl+Enter To Submit..."
+                    ref={textAreaRef}
+                    value={prompt}
+                    onChange={(e) => {
+                      dispatch(livePrompt(e.target.value));
+                    }}
+                    onKeyDown={handleKeyDown}
+                    disabled={isUserExpired} // Add this line to disable textarea when user is expired
+                  />
 
               {!status?.loading ? (
                 <button onClick={FormHandle}>{<Rocket />}</button>
