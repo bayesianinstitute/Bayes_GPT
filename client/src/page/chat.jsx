@@ -141,22 +141,17 @@ const InputArea = ({ status, chatRef, stateAction }) => {
       stateAction({ type: "chat", status: true });
 
       let chatsId = Date.now();
-      // console.log("chatid in ui",chatsId);
 
       dispatch(insertNew({ id: chatsId, content: "", prompt }));
       chatRef?.current?.clearResponse();
 
-      dispatch(livePrompt("")); // Clear the prompt by updating the state
-
-      // Reset textSubmitted state to false after submitting
+      dispatch(livePrompt(""));
+ 
       setTextSubmitted(true);
 
-      // Reset the textarea's height to default value after submitting
       if (textAreaRef.current) {
         textAreaRef.current.style.height = "auto";
         textAreaRef.current.style.height = "31px"; // Default height after submitting
-
-
       }
 
       let res = null;
@@ -183,11 +178,11 @@ const InputArea = ({ status, chatRef, stateAction }) => {
         }
       } finally {
         if (res?.data) {
-          const { _id, content } = res?.data?.data;
+          const { _id, content,imageUrl } = res?.data?.data;
+          {console.log("response",_id, content,imageUrl)};
+          dispatch(insertNew({ _id, fullContent: content,imageUrl, chatsId }));
 
-          dispatch(insertNew({ _id, fullContent: content, chatsId }));
-
-          chatRef?.current?.loadResponse(stateAction, content, chatsId);
+          chatRef?.current?.loadResponse(stateAction, content,imageUrl, chatsId);
 
           // Stop animation
           stateAction({ type: "resume", status: false });
@@ -313,12 +308,6 @@ const InputArea = ({ status, chatRef, stateAction }) => {
       )}
 
       <div className="text">
-        {/*<a
-          target="_blank"
-          href="https://help.openai.com/en/articles/6825453-chatgpt-release-notes"
-        >
-          ChatGPT Mar 14 Version.
-      </a>{" "}*/}
         Free Bayes Preview Research. Our goal is to make AI systems more natural and
         safe to interact with. Your feedback will help us improve.
       </div>

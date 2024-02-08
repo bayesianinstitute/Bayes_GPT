@@ -1,12 +1,11 @@
 import { db } from "../db/connection.js";
 import collections from "../db/collections.js";
-import { ObjectId } from 'mongodb';
-import { v4 as uuidv4 } from 'uuid';
+import { ObjectId } from "mongodb";
+import { v4 as uuidv4 } from "uuid";
 
 const chatHelper = {
-  newResponse: (prompt, { openai }, userId,chatId) => {
+  newResponse: (prompt, { openai, url }, userId, chatId) => {
     return new Promise(async (resolve, reject) => {
-      // chatId = new ObjectId().toHexString();
       console.log("helper chatId", chatId);
       console.log("helper userId", userId);
 
@@ -15,28 +14,33 @@ const chatHelper = {
         await db
           .collection(collections.CHAT)
           .createIndex({ user: 1 }, { unique: true });
-        res = await db.collection(collections.CHAT).insertOne({
-          user: userId.toString(),
-          data: [
+
+        // Create a data object with or without imageUrl based on the existence of url
+        const dataObject = {
+          chatId,
+          chats: [
             {
-              chatId,
-              chats: [
-                {
-                  prompt,
-                  content: openai,
-                },
-              ],
+              prompt,
+              content: openai,
             },
           ],
+        };
+
+        if (url !== null) {
+          dataObject.chats[0].imageUrl = url;
+        }
+
+        res = await db.collection(collections.CHAT).insertOne({
+          user: userId.toString(),
+          data: [dataObject],
         });
       } catch (err) {
         if (err?.code === 11000) {
+          // Update the document and push a new chat with or without imageUrl based on the existence of url
           res = await db
             .collection(collections.CHAT)
             .updateOne(
-              {
-                user: userId.toString(),
-              },
+              { user: userId.toString() },
               {
                 $push: {
                   data: {
@@ -45,6 +49,7 @@ const chatHelper = {
                       {
                         prompt,
                         content: openai,
+                        ...(url !== null && { imageUrl: url }),
                       },
                     ],
                   },
@@ -60,7 +65,6 @@ const chatHelper = {
       } finally {
         if (res) {
           res.chatId = chatId;
-          // console.log("res helpper",res.chatId)
           resolve(res);
         } else {
           reject({ text: "DB gets something wrong" });
@@ -68,29 +72,35 @@ const chatHelper = {
       }
     });
   },
-
-  updateChat: (chatId, prompt, { openai }, userId) => {
+  updateChat : (chatId, prompt, { openai, url }, userId) => {
     return new Promise(async (resolve, reject) => {
-      let res = await db
-        .collection(collections.CHAT)
+      let updateQuery = {
+        user: userId.toString(),
+        "data.chatId": chatId,
+      };
+  
+      // Create the chat object with or without imageUrl based on the existence of url
+      let chatObject = {
+        prompt,
+        content: openai,
+      };
+      if (url !== null) {
+        chatObject.imageUrl = url;
+      }
+  
+      let res = await db.collection(collections.CHAT)
         .updateOne(
-          {
-            user: userId.toString(),
-            "data.chatId": chatId,
-          },
+          updateQuery,
           {
             $push: {
-              "data.$.chats": {
-                prompt,
-                content: openai,
-              },
+              "data.$.chats": chatObject,
             },
           }
         )
         .catch((err) => {
           reject(err);
         });
-
+  
       if (res) {
         resolve(res);
       } else {
@@ -98,7 +108,8 @@ const chatHelper = {
       }
     });
   },
-   getChat: (userId, chatId) => {
+  
+  getChat: (userId, chatId) => {
     return new Promise(async (resolve, reject) => {
       let res = await db
         .collection(collections.CHAT)
@@ -124,9 +135,7 @@ const chatHelper = {
           },
         ])
         .toArray()
-        .catch((err) => [
-          reject(err),
-        ]);
+        .catch((err) => [reject(err)]);
 
       if (res && Array.isArray(res) && res[0]?.chat) {
         resolve(res[0].chat);
@@ -214,7 +223,6 @@ const chatHelper = {
     });
   },
 
-
   getConversation: (chatId) => {
     return new Promise((resolve, reject) => {
       db.collection(collections.CONVERSATION)
@@ -234,9 +242,7 @@ const chatHelper = {
     });
   },
 
-
-
-  saveModelType: (userId, modelType={ defaultValue: 'gpt-3.5-turbo' }) => {
+  saveModelType: (userId, modelType = { defaultValue: "gpt-3.5-turbo" }) => {
     return new Promise((resolve, reject) => {
       db.collection(collections.SETTING)
         .updateOne(
@@ -254,7 +260,7 @@ const chatHelper = {
     });
   },
 
-  getModelType: (userId, defaultValue = { defaultValue: 'gpt-3.5-turbo' }) => {
+  getModelType: (userId, defaultValue = { defaultValue: "gpt-3.5-turbo" }) => {
     return new Promise((resolve, reject) => {
       db.collection(collections.SETTING)
         .findOne({
@@ -268,7 +274,6 @@ const chatHelper = {
             // Return the default value if modelType is not found
             resolve(defaultValue);
             console.log("default model type " + res.modelType);
-
           }
         })
         .catch((err) => {
@@ -279,110 +284,133 @@ const chatHelper = {
   generateAndInsertInvitationCodes: (n, partner_name) => {
     return new Promise(async (resolve, reject) => {
       try {
-        const existingCodes = await db.collection(collections.INVITATION).distinct('codes');
-  
+        const existingCodes = await db
+          .collection(collections.INVITATION)
+          .distinct("codes");
+
         const codes = Array.from({ length: n }, () => {
           let code;
           do {
-             code = uuidv4(); // Generating UUID
+            code = uuidv4(); // Generating UUID
           } while (existingCodes.includes(code.toString()));
-  
+
           return code.toString();
         });
-  
+
         const invitationDocument = {
           partner_name: partner_name,
           codes: codes,
         };
-  
-        await db.collection(collections.INVITATION).insertOne(invitationDocument);
-  
-        resolve({ message: `${n} unique Invitation codes generated and inserted successfully.` });
+
+        await db
+          .collection(collections.INVITATION)
+          .insertOne(invitationDocument);
+
+        resolve({
+          message: `${n} unique Invitation codes generated and inserted successfully.`,
+        });
       } catch (error) {
         reject(error);
       }
     });
   },
-  
+
   updateInvitationCode: async (userId, invitationCode) => {
     return new Promise(async (resolve, reject) => {
       try {
         // Check if the invitation code exists in INVITATION collection
-        const invitationExists = await db.collection(collections.INVITATION).findOne({ codes: invitationCode });
-        console.log(invitationExists)
+        const invitationExists = await db
+          .collection(collections.INVITATION)
+          .findOne({ codes: invitationCode });
+        console.log(invitationExists);
         if (invitationExists) {
           // Update USER collection
-          const userUpdateResult = await db.collection(collections.USER).updateOne(
-            { _id: new ObjectId(userId) },
-            {
-              $set: {
-                inviteCode: invitationCode,
-                expireAt: new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000),
-              },
-            }
-          );
-  
+          const userUpdateResult = await db
+            .collection(collections.USER)
+            .updateOne(
+              { _id: new ObjectId(userId) },
+              {
+                $set: {
+                  inviteCode: invitationCode,
+                  expireAt: new Date(
+                    new Date().getTime() + 30 * 24 * 60 * 60 * 1000
+                  ),
+                },
+              }
+            );
+
           console.log("userUpdateResult", userUpdateResult);
-  
+
           if (userUpdateResult.modifiedCount > 0) {
             // Remove the code from INVITATION collection
-            const removeCodeResult = await db.collection(collections.INVITATION).updateOne(
-              { codes: invitationCode },
-              { $pull: { codes: invitationCode } }
-            );
-  
+            const removeCodeResult = await db
+              .collection(collections.INVITATION)
+              .updateOne(
+                { codes: invitationCode },
+                { $pull: { codes: invitationCode } }
+              );
+
             console.log("removeCodeResult", removeCodeResult);
-  
-            resolve({ success: true, message: 'Invitation code updated successfully.' });
+
+            resolve({
+              success: true,
+              message: "Invitation code updated successfully.",
+            });
           } else {
-            reject(new Error('User not found or invitationCode not updated.'));
+            reject(new Error("User not found or invitationCode not updated."));
           }
         } else {
-          reject(new Error('Invitation code not found in INVITATION collection.'));
+          reject(
+            new Error("Invitation code not found in INVITATION collection.")
+          );
         }
       } catch (error) {
-        console.error('Error updating invitation code:', error);
+        console.error("Error updating invitation code:", error);
         reject(error);
       }
     });
   },
-  
 
   fetchInvitationCodesByPartnerName: (partner_name) => {
     return new Promise(async (resolve, reject) => {
       try {
-        const codes = await db.collection(collections.INVITATION)
+        const codes = await db
+          .collection(collections.INVITATION)
           .find({ partner_name: partner_name })
           .toArray();
-  
+
         resolve(codes);
       } catch (error) {
-        console.error('Error fetching invitation codes by partner name:', error);
-        reject('Error fetching invitation codes by partner name.');
+        console.error(
+          "Error fetching invitation codes by partner name:",
+          error
+        );
+        reject("Error fetching invitation codes by partner name.");
       }
     });
   },
   checkCodeAvailability: (code) => {
     return new Promise(async (resolve, reject) => {
       try {
-        const result = await db.collection(collections.INVITATION)
+        const result = await db
+          .collection(collections.INVITATION)
           .findOne({ codes: code });
-  
+
         if (result) {
           const partner_name = result.partner_name || null;
           resolve({
             available: true,
-            partner_name: partner_name
+            partner_name: partner_name,
           });
         } else {
           resolve({
             available: false,
-            partner_name: null
+            partner_name: null,
           });
         }
       } catch (error) {
-        console.error('Error checking code availability:', error);
-        reject('Error checking code availability.');
+        console.error("Error checking code availability:", error);
+        reject("Error checking code availability.");
       }
     });
   },
@@ -390,62 +418,61 @@ const chatHelper = {
     return new Promise(async (resolve, reject) => {
       try {
         const now = new Date();
-        const invitationDocument = await db.collection(collections.INVITATION)
+        const invitationDocument = await db
+          .collection(collections.INVITATION)
           .findOne({ codes: code });
-  
+
         if (!invitationDocument) {
           resolve({ message: `Code ${code} not found.` });
           return;
         }
-  
-        const result = await db.collection(collections.INVITATION)
-          .updateOne(
-            { codes: code },
-            { $pull: { codes: code } }
-          );
-  
+
+        const result = await db
+          .collection(collections.INVITATION)
+          .updateOne({ codes: code }, { $pull: { codes: code } });
+
         if (result.modifiedCount > 0) {
           const invitationUsageDocument = {
             userId: userId,
             code: code,
             createdDate: now.toISOString(),
           };
-  
-          await db.collection(collections.INVITATIONUSAGE).insertOne(invitationUsageDocument);
-  
+
+          await db
+            .collection(collections.INVITATIONUSAGE)
+            .insertOne(invitationUsageDocument);
 
           setTimeout(async () => {
-            await db.collection(collections.INVITATIONUSAGE).deleteOne({ code: code });
+            await db
+              .collection(collections.INVITATIONUSAGE)
+              .deleteOne({ code: code });
           }, 60000); // 1 minute in milliseconds
-  
-          resolve({ message: `Code ${code} deleted successfully and assigned to INVITATIONUSAGE.` });
+
+          resolve({
+            message: `Code ${code} deleted successfully and assigned to INVITATIONUSAGE.`,
+          });
         } else {
           resolve({ message: `Code ${code} not found.` });
         }
       } catch (error) {
-        console.error('Error deleting code:', error);
-        reject('Error deleting code.');
+        console.error("Error deleting code:", error);
+        reject("Error deleting code.");
       }
     });
   },
   getUserDetails: async (userId) => {
-   
     return new Promise(async (resolve, reject) => {
-    
-        const user = await db.collection(collections.USER).findOne({ _id: new ObjectId(userId) });  
-        
-        
-        if (!user) {
-          reject("User not found");
-          return;
-        }
-        resolve(user);
-  
+      const user = await db
+        .collection(collections.USER)
+        .findOne({ _id: new ObjectId(userId) });
+
+      if (!user) {
+        reject("User not found");
+        return;
+      }
+      resolve(user);
     });
   },
-  
-
 };
-
 
 export default chatHelper;

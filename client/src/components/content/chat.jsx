@@ -1,18 +1,20 @@
 import React, {
-  forwardRef,
   Fragment,
+  forwardRef,
+  useEffect,
   useImperativeHandle,
   useRef,
-  useEffect,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { GptIcon } from "../../assets";
 import { RobotIcon } from "../../assets";
 
+import ReactDom from 'react-dom';
+import ReactMarkdown from "react-markdown";
 import { insertNew } from "../../redux/messages";
 import "./style.scss";
-import ReactMarkdown from "react-markdown";
-import ReactDOMServer from "react-dom/server";
+
+
+
 const Chat = forwardRef(({ error, status }, ref) => {
   const dispatch = useDispatch();
 
@@ -24,14 +26,15 @@ const Chat = forwardRef(({ error, status }, ref) => {
   const { latest, content, all } = messages;
 
   const renderMarkdown = (content) => {
-    return ReactDOMServer.renderToString(
-      <ReactMarkdown>{content}</ReactMarkdown>
+    return ReactDom.renderToString(
+      <ReactMarkdown>{content} </ReactMarkdown>
     );
   };
 
   const loadResponse = async (
     stateAction,
     response = content,
+    imageUrl, // Pass the imageUrl as a parameter
     chatsId = latest?.id
   ) => {
     clearInterval(window.interval);
@@ -41,8 +44,22 @@ const Chat = forwardRef(({ error, status }, ref) => {
     const waitForContentRef = async () => {
       if (contentRef?.current) {
         contentRef.current.classList.add("blink");
+
+        // merge respose and imageURL if present and display
+
         let renderedContent = renderMarkdown(response);
-        contentRef.current.innerHTML = `<span style="display: inline-block">${renderedContent}</span>`;
+
+        // Render the content
+        let contentHTML = `<span style="display: inline-block"><p>${response}</p></span><br>`;
+        if (imageUrl) {
+          contentHTML += `<img src="${imageUrl}" alt="Image" style="display: inline-block; width="70%" height="70%";">`;
+        }
+
+        // Set the HTML content
+        contentRef.current.innerHTML = contentHTML;
+
+
+        // Insert the content into the Redux store
         dispatch(insertNew({ chatsId, content: response, resume: true }));
         stopResponse(stateAction);
       } else {
@@ -51,7 +68,6 @@ const Chat = forwardRef(({ error, status }, ref) => {
       }
     };
 
-    // Start waiting for contentRef to be defined
     waitForContentRef();
   };
 
@@ -97,11 +113,12 @@ const Chat = forwardRef(({ error, status }, ref) => {
               <div className="res">
                 <div className="icon">
                   <RobotIcon />
-                  {/*<GptIcon />*/}
                 </div>
                 <div className="txt">
                   <span>
                     <ReactMarkdown>{obj?.content}</ReactMarkdown>
+                    {obj.imageUrl && <img src={obj.imageUrl} alt="Image" width="70%" height="70%" />}
+
                   </span>
                 </div>
               </div>
@@ -130,11 +147,7 @@ const Chat = forwardRef(({ error, status }, ref) => {
               ) : !status?.resume ? (
                 <span ref={contentRef} className="blink" />
               ) : (
-                <span
-                className="loading-text"
-                >
-                  Loading....
-                </span>
+                <span className="loading-text">Loading....</span>
               )}
             </div>
           </div>

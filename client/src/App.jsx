@@ -63,6 +63,7 @@ const App = () => {
       )}
 
       <Routes>
+
         <Route element={<ProtectedRoute offline={offline} authed={true} />}>
           <Route exact path="/" element={<Main />} />
           <Route path="/chat" element={<Main />} />
