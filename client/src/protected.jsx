@@ -24,12 +24,6 @@ const ProtectedRoute = ({ offline, authed }) => {
           dispatch(insertUser(res?.data?.data));
         }
       } catch (err) {
-
-
-        console.log("error in proteted")
-        console.log(err);
-
-
         if (err?.response?.data?.status === 405) {
           dispatch(emptyUser());
           dispatch(emptyAllRes());
@@ -38,14 +32,7 @@ const ProtectedRoute = ({ offline, authed }) => {
           } else {
             setComponent(<Outlet />);
           }
-        } else if (err?.response?.data?.message?.status === 410){
-
-          console.log("Your invation code is expired")
-          alert("Your invation code is expired")
-          navigate("/update_invitation_code"); 
-          
-        }
-        else if (err?.code !== "ERR_NETWORK") {
+        } else if (err?.code !== "ERR_NETWORK") {
           navigate("/something-went-wrong");
         }
       } finally {
@@ -62,7 +49,7 @@ const ProtectedRoute = ({ offline, authed }) => {
     if (!offline) {
       getResponse();
     }
-  }, []);
+  }, [location]);
 
   return component;
 };
