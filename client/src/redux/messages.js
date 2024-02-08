@@ -8,7 +8,8 @@ let messagesSlice = createSlice({
         _id: null,
         latest: {
             prompt: '',
-            content: ''
+            content: '',
+            imageUrl: '' // Add imageUrl field here
         },
         all: []
     },
@@ -34,7 +35,7 @@ let messagesSlice = createSlice({
         insertNew: (state, { payload }) => {
             const { chatsId, content = null,
                 resume = false, fullContent = null,
-                _id = null, prompt = null } = payload
+                _id = null, prompt = null,imageUrl = null } = payload
 
             if (_id) {
                 state._id = _id
@@ -46,11 +47,16 @@ let messagesSlice = createSlice({
                 state.latest.prompt = prompt
             }
 
+            if (imageUrl) {
+                state.latest.imageUrl = imageUrl // Set the imageUrl field
+            }
+
             const addToList = (latest) => {
                 if (state['all'].find(obj => obj.id === latest.id)) {
                     state['all'].forEach(obj => {
                         if (obj.id === latest.id) {
                             obj.content = latest.content
+                            obj.imageUrl = latest.imageUrl
                         }
                     })
                 } else {

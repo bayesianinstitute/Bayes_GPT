@@ -1,11 +1,10 @@
 import { Router } from "express";
 import dotnet from "dotenv";
-import { Configuration, OpenAIApi } from "openai";
+import OpenAI from "openai";
 import user from "../helpers/user.js";
 import jwt from "jsonwebtoken";
 import chat from "../helpers/chat.js";
 import { ObjectId } from "mongodb";
-
 
 import { sendErrorEmail } from "../mail/send.js";
 
@@ -14,6 +13,11 @@ dotnet.config();
 let router = Router();
 let chatId;
 let sendingError;
+
+const openai = new OpenAI({
+  organization: process.env.OPENAI_ORGANIZATION,
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 const CheckUser = async (req, res, next) => {
   jwt.verify(
@@ -53,16 +57,10 @@ const CheckUser = async (req, res, next) => {
   );
 };
 
-const configuration = new Configuration({
-  organization: process.env.OPENAI_ORGANIZATION,
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 router.get("/", (req, res) => {
   res.send("Welcome to chatGPT api v1");
 });
 
-const openai = new OpenAIApi(configuration);
 // Example API endpoint to get and update model type
 router.get("/modelType", CheckUser, async (req, res) => {
   const userId = req.body.userId;
@@ -122,29 +120,89 @@ router.post("/", CheckUser, async (req, res) => {
 
   try {
     const modelType = await chat.getModelType(userId);
+    // const modelType = "dall-e-3";
     console.log("modelType in post :", modelType);
 
-    conversation.push({ role: "user", content: prompt });
+    if (modelType === "dall-e-3") {
+      const response = await openai.images.generate({
+        model: modelType,
+        prompt: prompt,
+      });
+      if (response?.data) {
+        let revisedPrompt = response.data[0].revised_prompt;
+        let url = response.data[0].url;
+        // let assistantReply = response.choices[0]?.message?.content;
+        console.log(revisedPrompt);
+        console.log(url);
 
-    response = await openai.createChatCompletion({
-      model: modelType,
-      messages: conversation,
-      temperature: 0.6,
-    });
-    console.log("response in post :", response);
+        response.openai = revisedPrompt;
+        response.url = url;
+        response.db = await chat.newResponse(prompt, response, userId, chatId);
 
-    if (response.data?.choices?.[0]?.message?.content) {
-      let assistantReply = response.data.choices[0].message.content;
+        
 
-      response.openai = assistantReply;
-      response.db = await chat.newResponse(prompt, response, userId, chatId);
+        
+        if (response.db && response.openai && response.url) {
+          res.status(200).json({
+            status: 200,
+            message: "Success",
+            data: {
+              _id: response.db["chatId"],
+              content: response.openai,
+              imageUrl: response.url,
+            },
+          });
+        } else {
+          res.status(500).json({
+            status: 500,
+            message: "Incomplete response",
+          });
+        }
+      }
+    } else {
+      conversation.push({ role: "user", content: prompt });
 
-      conversation.push({ role: "assistant", content: assistantReply });
+      response = await openai.chat.completions.create({
+        model: modelType,
+        messages: conversation,
+        temperature: 0.6,
+      });
+      // console.log("response in post :", response);
 
-      await chat.saveConversation(chatId, conversation); // Save conversation to the database
+      if (response.choices[0]?.message?.content) {
+        let assistantReply = response.choices[0]?.message?.content;
+
+        response.openai = assistantReply;
+        response.db = await chat.newResponse(prompt, response, userId, chatId);
+
+        conversation.push({ role: "assistant", content: assistantReply });
+
+        await chat.saveConversation(chatId, conversation); // Save conversation to the database
+
+
+
+        if (response.db && response.openai) {
+          res.status(200).json({
+            status: 200,
+            message: "Success",
+            data: {
+              _id: response.db["chatId"],
+              content: response.openai
+            },
+          });
+        } else {
+          // sendingError = "Error in response chat" + err;
+
+          // sendErrorEmail(sendingError);
+          res.status(500).json({
+            status: 500,
+            message: "Incomplete response",
+          });
+        }
+      }
     }
   } catch (err) {
-    sendingError = "Error in post" + err;
+    // sendingError = "Error in post" + err;
 
     // sendErrorEmail(sendingError);
 
@@ -155,92 +213,118 @@ router.post("/", CheckUser, async (req, res) => {
     return;
   }
 
-  if (response.db && response.openai) {
-    // conversationMemory[chatId] = conversation;
+  // if (response.db && response.openai) {
+  //   // conversationMemory[chatId] = conversation;
 
-    res.status(200).json({
-      status: 200,
-      message: "Success",
-      data: {
-        _id: response.db["chatId"],
-        content: response.openai,
-      },
-    });
-  } else {
-    sendingError = "Error in response chat" + err;
+  //   res.status(200).json({
+  //     status: 200,
+  //     message: "Success",
+  //     data: {
+  //       _id: response.db["chatId"],
+  //       content: response.openai,
+  //     },
+  //   });
+  // } else {
+  //   // sendingError = "Error in response chat" + err;
 
-    // sendErrorEmail(sendingError);
+  //   // sendErrorEmail(sendingError);
 
-    res.status(500).json({
-      status: 500,
-      message: "Incomplete response",
-    });
-  }
+  //   res.status(500).json({
+  //     status: 500,
+  //     message: "Incomplete response",
+  //   });
+  // }
 });
 
 router.put("/", CheckUser, async (req, res) => {
   const { prompt, userId, chatId } = req.body;
-  // console.log("chatId in router in put :", chatId);
-  // console.log("prompt in put :", prompt);
-
   let response = {};
 
-  // load chat data from database
-  let conversation = await chat.getConversation(chatId);
-  let modelType = await chat.getModelType(userId);
-  console.log("modelType in post :", modelType);
-
   try {
-    // Use the conversation object here
-    // console.log("Conversation:", conversation);
+    const modelType = await chat.getModelType(userId);
+    // const modelType = "dall-e-3";
+    console.log("modelType in put :", modelType);
 
-    conversation.push({ role: "user", content: prompt });
+    if (modelType === "dall-e-3") {
+      const responseFromOpenAI = await openai.images.generate({
+        model: modelType,
+        prompt: prompt,
+      });
 
-    response = await openai.createChatCompletion({
-      model: modelType,
-      messages: conversation,
-      temperature: 0.6,
-    });
+      if (responseFromOpenAI?.data) {
+        let revisedPrompt = responseFromOpenAI.data[0].revised_prompt;
+        let url = responseFromOpenAI.data[0].url;
+        console.log(revisedPrompt);
+        console.log(url);
 
-    if (response.data?.choices?.[0]?.message?.content) {
-      let assistantReply = response.data.choices[0].message.content;
+        response.openai = revisedPrompt;
+        response.url = url;
 
-      response.openai = assistantReply;
-      response.db = await chat.updateChat(chatId, prompt, response, userId);
+        response.db = await chat.updateChat(chatId, prompt, response, userId);
 
-      conversation.push({ role: "assistant", content: assistantReply });
+        if (response.db && response.openai && response.url) {
+          res.status(200).json({
+            status: 200,
+            message: "Success",
+            data: {
+              content: response.openai,
+              imageUrl: response.url,
+            },
+          });
+        } else {
+          res.status(500).json({
+            status: 500,
+            message: "Incomplete response",
+          });
+        }
+      } else {
+        res.status(500).json({
+          status: 500,
+          message: "Incomplete response from OpenAI",
+        });
+      }
+    } else {
+      let conversation = await chat.getConversation(chatId);
 
-      await chat.saveConversation(chatId, conversation); // Save updated conversation to the database
+      conversation.push({ role: "user", content: prompt });
+
+      response = await openai.chat.completions.create({
+        model: modelType,
+        messages: conversation,
+        temperature: 0.6,
+      });
+
+      if (response.choices[0]?.message?.content) {
+        let assistantReply = response.choices[0]?.message?.content;
+
+        response.openai = assistantReply;
+        response.db = await chat.updateChat(chatId, prompt, response, userId);
+
+        conversation.push({ role: "assistant", content: assistantReply });
+
+        await chat.saveConversation(chatId, conversation); // Save updated conversation to the database
+      }
+
+      if (response.db && response.openai) {
+        res.status(200).json({
+          status: 200,
+          message: "Success",
+          data: {
+            content: response.openai,
+          },
+        });
+      } else {
+        res.status(500).json({
+          status: 500,
+          message: "Incomplete response",
+        });
+      }
     }
   } catch (err) {
-    sendingError = "Error in put chat" + err;
-
-    sendErrorEmail(err);
-
     console.log("err :" + err);
     res.status(500).json({
       status: 500,
-      message: err,
-    });
-    return;
-  }
-
-  if (response.db && response.openai) {
-    // conversationMemory[chatId] = conversation;
-
-    res.status(200).json({
-      status: 200,
-      message: "Success",
-      data: {
-        content: response.openai,
-      },
-    });
-  } else {
-    // sendErrorEmail(sendingError);
-
-    res.status(500).json({
-      status: 500,
-      message: "Incomplete response",
+      message: "Internal Server Error",
     });
   }
 });
@@ -333,7 +417,7 @@ router.get("/userDetails", CheckUser, async (req, res) => {
 
   try {
     const user = await chat.getUserDetails(userId);
-   
+
     if (!user) {
       res.status(404).json({
         status: false,
@@ -349,9 +433,8 @@ router.get("/userDetails", CheckUser, async (req, res) => {
       status: !isExpired,
       fName: user.fName,
       lName: user.lName,
-      expireAt:  user.expireAt,
-      inviteCode: user.inviteCode
-      
+      expireAt: user.expireAt,
+      inviteCode: user.inviteCode,
     };
 
     res.status(200).json(userDetails);
@@ -388,7 +471,7 @@ router.put("/update-invitation-code", CheckUser, async (req, res) => {
   const userId = req.body.userId;
   const invitationCode = req.body.code;
   console.log(invitationCode);
-  console.log("UserId ",userId);
+  console.log("UserId ", userId);
 
   try {
     // Call your updateInvitationCode function
@@ -396,10 +479,10 @@ router.put("/update-invitation-code", CheckUser, async (req, res) => {
 
     res.status(200).json({ update });
   } catch (err) {
-    console.error('Error updating invitation code:', err); // Log the error
+    console.error("Error updating invitation code:", err); // Log the error
     res.status(500).json({
       status: 500,
-      message: err || 'Internal Server Error',
+      message: err || "Internal Server Error",
     });
   }
 });
