@@ -7,7 +7,8 @@ const chatHelper = {
   newResponse: (prompt, { openai, url }, userId, chatId) => {
     return new Promise(async (resolve, reject) => {
       console.log("helper chatId", chatId);
-      console.log("helper userId", userId);
+      console.log("helper userId", userId);   
+      console.log("url", url);
 
       let res = null;
       try {
@@ -78,7 +79,7 @@ const chatHelper = {
         user: userId.toString(),
         "data.chatId": chatId,
       };
-  
+      console.log("url",url)
       // Create the chat object with or without imageUrl based on the existence of url
       let chatObject = {
         prompt,
