@@ -138,7 +138,7 @@ router.post("/", CheckUser, async (req, res) => {
     },
   ];
   console.log("prompt in post :", prompt);
-
+  await chat.saveConversation(chatId, conversation); // Save conversation to the database
   try {
     const modelType = await chat.getModelType(userId);
     // const modelType = "dall-e-3";
@@ -279,7 +279,7 @@ router.put("/", CheckUser, async (req, res) => {
     const modelType = await chat.getModelType(userId);
     // const modelType = "dall-e-3";
     console.log("modelType in put :", modelType);
-
+    console.log("chatid",chatId,userId);
     if (modelType === "dall-e-3") {
       const responseFromOpenAI = await openai.images.generate({
         model: modelType,
@@ -334,8 +334,9 @@ router.put("/", CheckUser, async (req, res) => {
         });
       }
     } else {
+      console.log("BYE");
       let conversation = await chat.getConversation(chatId);
-
+      console.log("conversation",conversation);
       conversation.push({ role: "user", content: prompt });
 
       response = await openai.chat.completions.create({
@@ -346,7 +347,7 @@ router.put("/", CheckUser, async (req, res) => {
 
       if (response.choices[0]?.message?.content) {
         let assistantReply = response.choices[0]?.message?.content;
-
+        console.log("Assistant",assistantReply);
         response.openai = assistantReply;
         response.db = await chat.updateChat(chatId, prompt, response, userId);
 
