@@ -47,7 +47,7 @@ const Chat = forwardRef(({ error, status }, ref) => {
 
         // merge respose and imageURL if present and display
 
-        let renderedContent = renderMarkdown(response);
+        // let renderedContent = renderMarkdown(response);
 
         // Render the content
         let contentHTML = `<span style="display: inline-block"><p>${response}</p></span><br>`;
