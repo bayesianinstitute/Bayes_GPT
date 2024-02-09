@@ -7,13 +7,34 @@ import chat from "../helpers/chat.js";
 import { ObjectId } from "mongodb";
 
 import { sendErrorEmail } from "../mail/send.js";
+import multer from "multer";
+import https from "https";
+import fs from "fs";
+
 
 dotnet.config();
 
 let router = Router();
 let chatId;
 let sendingError;
+// Multer storage configuration
+// Multer storage configuration
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     const folderPath = 'image-generation'; // Folder path
+//     if (!fs.existsSync(folderPath)) {
+//       fs.mkdirSync(folderPath);
+//     }
+//     cb(null, folderPath); // Destination folder
+//   },
+//   filename: function (req, file, cb) {
+//     const timestamp = Date.now(); // Get the current timestamp
+//     const filename = `${timestamp}-${file.originalname}`; // Combine timestamp and original filename
+//     cb(null, filename); // Set the filename
+//   },
+// });
 
+// const upload = multer({ storage: storage });
 const openai = new OpenAI({
   organization: process.env.OPENAI_ORGANIZATION,
   apiKey: process.env.OPENAI_API_KEY,
@@ -135,8 +156,22 @@ router.post("/", CheckUser, async (req, res) => {
         console.log(revisedPrompt);
         console.log(url);
 
+        
+        const timestamp = Date.now(); // Get the current timestamp
+        const imagePath = `image-generation/${timestamp}.jpg`; // Construct the image path
+        
+       
+        const file = fs.createWriteStream(imagePath);
+        const request = https.get(url, function(response) {
+          response.pipe(file);
+          file.on('finish', function() {
+            file.close();
+          });
+        });
+
         response.openai = revisedPrompt;
-        response.url = url;
+        response.url = `${process.env.SITE_URL}:${process.env.PORT}/${imagePath}`;
+
         response.db = await chat.newResponse(prompt, response, userId, chatId);
 
         
@@ -257,8 +292,23 @@ router.put("/", CheckUser, async (req, res) => {
         console.log(revisedPrompt);
         console.log(url);
 
+        const timestamp = Date.now(); // Get the current timestamp
+        const imagePath = `image-generation/${timestamp}.jpg`; // Construct the image path
+          // Create the directory and any necessary subdirectories recursively if they don't exist
+       
+
+        const file = fs.createWriteStream(imagePath);
+        const request = https.get(url, function(response) {
+          response.pipe(file);
+          file.on('finish', function() {
+            file.close();
+          });
+        });
+ 
+        console.log("imagePath",imagePath)
         response.openai = revisedPrompt;
-        response.url = url;
+        response.url = `${process.env.SITE_URL}:${process.env.PORT}/${imagePath}`;
+
 
         response.db = await chat.updateChat(chatId, prompt, response, userId);
 
