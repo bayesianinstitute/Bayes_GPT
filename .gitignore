@@ -28,7 +28,7 @@ client/*.local
 server/.env
 server/node_modules
 server/dist
-image-generation
+image-generation/
 # Local Netlify folder
 .netlify
 

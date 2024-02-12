@@ -65,7 +65,7 @@ let messagesSlice = createSlice({
             }
 
             if (content && resume) {
-                state.latest.content += content
+                state.latest.content = content
                 addToList(state.latest)
 
             } else if (content) {

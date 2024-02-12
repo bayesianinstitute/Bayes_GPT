@@ -4,19 +4,21 @@ import React, {
   useEffect,
   useImperativeHandle,
   useRef,
+  useState,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RobotIcon } from "../../assets";
 
-import ReactDom from 'react-dom';
 import ReactMarkdown from "react-markdown";
 import { insertNew } from "../../redux/messages";
 import "./style.scss";
 
-
+import { LazyLoadImage } from "react-lazy-load-image-component";
 
 const Chat = forwardRef(({ error, status }, ref) => {
   const dispatch = useDispatch();
+
+  const [isImage, setIsImage] = useState(false);
 
   const contentRef = useRef(null);
 
@@ -25,50 +27,31 @@ const Chat = forwardRef(({ error, status }, ref) => {
   const { user, messages } = useSelector((state) => state);
   const { latest, content, all } = messages;
 
-  const renderMarkdown = (content) => {
-    return ReactDom.renderToString(
-      <ReactMarkdown>{content} </ReactMarkdown>
-    );
-  };
-
   const loadResponse = async (
     stateAction,
     response = content,
-    imageUrl, // Pass the imageUrl as a parameter
+    imageUrl,
     chatsId = latest?.id
   ) => {
     clearInterval(window.interval);
-
     stateAction({ type: "resume", status: true });
+    let contentHTML = `<span style="display: inline-block"><p>${response}</p></span><br>`;
+    if (imageUrl) {
+      setIsImage(true);
+      contentHTML += `<img src="${imageUrl}" alt="Loading Image" >`;
 
-    const waitForContentRef = async () => {
-      if (contentRef?.current) {
-        contentRef.current.classList.add("blink");
-
-        // merge respose and imageURL if present and display
-
-        // let renderedContent = renderMarkdown(response);
-
-        // Render the content
-        let contentHTML = `<span style="display: inline-block"><p>${response}</p></span><br>`;
-        if (imageUrl) {
-          contentHTML += `<img src="${imageUrl}" alt="Image" style="display: inline-block; width="70%" height="70%";">`;
-        }
-
+      setTimeout(() => {
         // Set the HTML content
         contentRef.current.innerHTML = contentHTML;
+      }, 9000);
+    } else {
+      setIsImage(false);
+    }
+    // Insert the content into the Redux store
+    dispatch(insertNew({ chatsId, imageUrl, content: response, resume: true }));
 
-
-        // Insert the content into the Redux store
-        dispatch(insertNew({ chatsId, content: response, resume: true }));
-        stopResponse(stateAction);
-      } else {
-        // Wait and try again after a short delay
-        setTimeout(waitForContentRef, 100); // Adjust the delay as needed
-      }
-    };
-
-    waitForContentRef();
+    // Stop response immediately
+    stopResponse(stateAction);
   };
 
   const stopResponse = (stateAction) => {
@@ -117,8 +100,13 @@ const Chat = forwardRef(({ error, status }, ref) => {
                 <div className="txt">
                   <span>
                     <ReactMarkdown>{obj?.content}</ReactMarkdown>
-                    {obj.imageUrl && <img src={obj.imageUrl} alt="Image" width="70%" height="70%" />}
+                    {obj.imageUrl && (
+                      <img
+                        src={obj.imageUrl}
+                        alt="Image"
 
+                      />
+                    )}
                   </span>
                 </div>
               </div>
@@ -145,7 +133,21 @@ const Chat = forwardRef(({ error, status }, ref) => {
               {error ? (
                 <div className="error">Something went wrong.</div>
               ) : !status?.resume ? (
-                <span ref={contentRef} className="blink" />
+                isImage ? (
+                  <div ref={contentRef} className="blink">
+                    <ReactMarkdown>{latest?.content}</ReactMarkdown>
+                    {latest?.imageUrl && (
+                      <img
+                        src={latest?.imageUrl}
+                        alt="Image"
+                        width="50%"
+                        height="50%"
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <ReactMarkdown>{latest?.content}</ReactMarkdown> // Render content here
+                )
               ) : (
                 <span className="loading-text">Loading....</span>
               )}

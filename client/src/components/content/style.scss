@@ -321,3 +321,13 @@
         transform: rotate(360deg);
     }
 }
+
+
+img {
+    max-width: 100%; // Ensure the image fills the available width while maintaining aspect ratio
+    height: 50vh; // Set a fixed height for the image
+    display: block;
+    margin: 0 auto;
+    object-fit: contain; // Ensure the image fits within its dimensions while maintaining aspect ratio
+    
+  }
