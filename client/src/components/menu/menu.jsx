@@ -466,9 +466,9 @@ const Modal = ({ changeColorMode, settingRef }) => {
 
           <p>Select Model:</p>
           <select value={modalState.selectedModel} onChange={handleModelChange}>
-            <option value="gpt-3.5-turbo">GPT-3.5-Turbo</option>
-            <option value="gpt-4-1106-preview">GPT-4-Preview</option>
-            <option value="dall-e-3">Dall-e-3</option>
+            <option value="gpt-3.5-turbo">GPT-3.5-Turbo(Text)</option>
+            <option value="gpt-4-1106-preview">GPT-4-Preview(Text)</option>
+            <option value="dall-e-3">Dall-e-3(Image)</option>
           </select>
         </div>
 
