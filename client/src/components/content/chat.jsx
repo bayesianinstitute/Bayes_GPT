@@ -43,7 +43,7 @@ const Chat = forwardRef(({ error, status }, ref) => {
       setTimeout(() => {
         // Set the HTML content
         contentRef.current.innerHTML = contentHTML;
-      }, 9000);
+      }, 15000);
     } else {
       setIsImage(false);
     }
