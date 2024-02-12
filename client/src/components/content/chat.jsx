@@ -43,7 +43,7 @@ const Chat = forwardRef(({ error, status }, ref) => {
       setTimeout(() => {
         // Set the HTML content
         contentRef.current.innerHTML = contentHTML;
-      }, 15000);
+      }, 9000);
     } else {
       setIsImage(false);
     }
@@ -101,10 +101,17 @@ const Chat = forwardRef(({ error, status }, ref) => {
                   <span>
                     <ReactMarkdown>{obj?.content}</ReactMarkdown>
                     {obj.imageUrl && (
-                      <img
+                      <LazyLoadImage
                         src={obj.imageUrl}
                         alt="Image"
-
+                        effect="blur"
+                        style={{
+                          maxWidth: "100%", // Ensure the image fills the available width while maintaining aspect ratio
+                          height: "50vh", // Set a fixed height for the image
+                          display: "block",
+                          margin: "0 auto",
+                          objectFit: "contain",
+                        }}
                       />
                     )}
                   </span>
@@ -137,7 +144,7 @@ const Chat = forwardRef(({ error, status }, ref) => {
                   <div ref={contentRef} className="blink">
                     <ReactMarkdown>{latest?.content}</ReactMarkdown>
                     {latest?.imageUrl && (
-                      <img
+                      <LazyLoadImage
                         src={latest?.imageUrl}
                         alt="Image"
                         width="50%"
