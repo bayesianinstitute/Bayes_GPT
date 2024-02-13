@@ -64,6 +64,7 @@ let messagesSlice = createSlice({
 
             if (content && resume) {
                 state.latest.content = content
+                state.latest.imageUrl = null
                 if (imageUrl) {
                     state.latest.imageUrl = imageUrl // Set the imageUrl field
                 }
