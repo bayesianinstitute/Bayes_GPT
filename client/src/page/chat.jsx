@@ -179,7 +179,7 @@ const InputArea = ({ status, chatRef, stateAction }) => {
         if (res?.data) {
           const { _id, content,imageUrl } = res?.data?.data;
           {console.log("response",_id, content,imageUrl)};
-          dispatch(insertNew({ _id, fullContent: content,imageUrl, chatsId }));
+          // dispatch(insertNew({ _id, fullContent: content,imageUrl, chatsId }));
 
           chatRef?.current?.loadResponse(stateAction, content,imageUrl, chatsId);
 

@@ -4,7 +4,6 @@ import React, {
   useEffect,
   useImperativeHandle,
   useRef,
-  useState,
 } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RobotIcon } from "../../assets";
@@ -15,17 +14,16 @@ import "./style.scss";
 
 import { LazyLoadImage } from "react-lazy-load-image-component";
 
+
 const Chat = forwardRef(({ error, status }, ref) => {
   const dispatch = useDispatch();
-
-  const [isImage, setIsImage] = useState(false);
 
   const contentRef = useRef(null);
 
   const containerRef = useRef(); // for scroll down
 
   const { user, messages } = useSelector((state) => state);
-  const { latest, content, all } = messages;
+  const { latest, content, all, imageUrl } = messages;
 
   const loadResponse = async (
     stateAction,
@@ -35,18 +33,7 @@ const Chat = forwardRef(({ error, status }, ref) => {
   ) => {
     clearInterval(window.interval);
     stateAction({ type: "resume", status: true });
-    let contentHTML = `<span style="display: inline-block"><p>${response}</p></span><br>`;
-    if (imageUrl) {
-      setIsImage(true);
-      contentHTML += `<img src="${imageUrl}" alt="Loading Image" >`;
 
-      setTimeout(() => {
-        // Set the HTML content
-        contentRef.current.innerHTML = contentHTML;
-      }, 9000);
-    } else {
-      setIsImage(false);
-    }
     // Insert the content into the Redux store
     dispatch(insertNew({ chatsId, imageUrl, content: response, resume: true }));
 
@@ -75,7 +62,7 @@ const Chat = forwardRef(({ error, status }, ref) => {
 
   useEffect(() => {
     containerRef.current.scrollIntoView();
-  }, [latest, content, all]);
+  }, [latest, content, all, imageUrl]);
 
   return (
     <div className="Chat">
@@ -89,7 +76,7 @@ const Chat = forwardRef(({ error, status }, ref) => {
               <div className="qs">
                 <div className="acc">{user?.fName?.charAt(0)}</div>
                 <div className="txt1">
-                  <ReactMarkdown>{obj?.prompt}</ReactMarkdown>
+                  <ReactMarkdown children={obj?.prompt} />
                 </div>
               </div>
 
@@ -99,19 +86,12 @@ const Chat = forwardRef(({ error, status }, ref) => {
                 </div>
                 <div className="txt">
                   <span>
-                    <ReactMarkdown>{obj?.content}</ReactMarkdown>
+                    <ReactMarkdown children={obj?.content} />
                     {obj.imageUrl && (
                       <LazyLoadImage
                         src={obj.imageUrl}
                         alt="Image"
                         effect="blur"
-                        style={{
-                          maxWidth: "100%", // Ensure the image fills the available width while maintaining aspect ratio
-                          height: "50vh", // Set a fixed height for the image
-                          display: "block",
-                          margin: "0 auto",
-                          objectFit: "contain",
-                        }}
                       />
                     )}
                   </span>
@@ -126,7 +106,7 @@ const Chat = forwardRef(({ error, status }, ref) => {
           <div className="qs">
             <div className="acc">{user?.fName?.charAt(0)}</div>
             <div className="txt">
-              <ReactMarkdown>{latest?.prompt}</ReactMarkdown>
+              <ReactMarkdown children={latest?.prompt} />
             </div>
           </div>
 
@@ -140,21 +120,16 @@ const Chat = forwardRef(({ error, status }, ref) => {
               {error ? (
                 <div className="error">Something went wrong.</div>
               ) : !status?.resume ? (
-                isImage ? (
-                  <div ref={contentRef} className="blink">
-                    <ReactMarkdown>{latest?.content}</ReactMarkdown>
-                    {latest?.imageUrl && (
-                      <LazyLoadImage
-                        src={latest?.imageUrl}
-                        alt="Image"
-                        width="50%"
-                        height="50%"
-                      />
-                    )}
-                  </div>
-                ) : (
-                  <ReactMarkdown>{latest?.content}</ReactMarkdown> // Render content here
-                )
+                <div className="blink">
+                  <ReactMarkdown children={latest?.content} />
+                  {latest?.imageUrl && (
+                    <LazyLoadImage
+                      src={latest?.imageUrl}
+                      alt="Image"
+                      effect="blur"
+                    />
+                  )}
+                </div>
               ) : (
                 <span className="loading-text">Loading....</span>
               )}
