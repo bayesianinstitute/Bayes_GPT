@@ -587,4 +587,26 @@ router.post("/deleteCode", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+router.delete("/chats/:chatId",CheckUser, async (req, res) => {
+  const { chatId } = req.params;
+  const userId = req.body.userId;
+ 
+  try {
+    if (!chatId) {
+      return res.status(400).json({ error: "Invalid or missing chat ID." });
+    }
+
+    // Assuming chat.deleteChat is a function that deletes the chat based on chatId
+    const result = await chat.deleteChat(userId,chatId);
+    
+    if (!result) {
+      return res.status(404).json({ error: "Chat not found." });
+    }
+
+    res.status(200).json({ message: "Chat deleted successfully." });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 export default router;
