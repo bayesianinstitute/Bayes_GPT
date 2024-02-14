@@ -462,6 +462,32 @@ const chatHelper = {
       }
     });
   },
+  deleteChat: (userId, chatId) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        if (!userId || !chatId) {
+          throw new Error("userId and chatId are required");
+        }
+  
+        const result = await db.collection(collections.CHAT).updateOne(
+          { "user": userId.toString() }, 
+          { $pull: { "data": { chatId: chatId } } }
+        );
+        
+        if (result.modifiedCount > 0) {
+          resolve(true); // Chat was deleted successfully
+        } else {
+          resolve(false); // Chat was not found or not deleted
+        }
+      } catch (error) {
+        console.error("Error deleting chat:", error);
+        reject(error); // Reject with the error
+      }
+    });
+  },
+  
+  
+  
   getUserDetails: async (userId) => {
     return new Promise(async (resolve, reject) => {
       const user = await db

@@ -80,6 +80,26 @@ const Menu = ({ changeColorMode }) => {
     document.body.style.overflowY = "hidden";
   };
 
+  const deleteChat = async (chatId) => {
+   
+    if (window.confirm("Do you want to delete this chat?")) {
+      try {
+        const res = await instance.delete(`/api/chat/chats/${chatId}`);
+        if (res.status === 200) {
+          const updatedHistory = history.filter((obj) => obj.chatId !== chatId);
+          dispatch(addHistory(updatedHistory));
+          alert("Chat deleted successfully");
+          navigate('/chat'); // Redirect to the '/chat' route
+        } else {
+          alert("Failed to delete chat");
+        }
+      } catch (error) {
+        alert("Error deleting chat");
+        console.error(error);
+      }
+    }
+  };
+  
   //Menu
 
   useEffect(() => {
@@ -174,42 +194,58 @@ const Menu = ({ changeColorMode }) => {
                 navigate("/chat");
               }
             }}
-          >
+          > 
             <Plus />
             New chat
           </button>
         </div>
 
         <div className="history">
-          {history?.map((obj, key) => {
-            if (obj?.active) {
-              return (
-                <button
-                  key={key}
-                  className="active"
-                  onClick={() => {
-                    navigate(`/chat/${obj?.chatId}`);
-                  }}
-                >
-                  <Message />
-                  {obj?.prompt}
-                </button>
-              );
-            } else {
-              return (
-                <button
-                  key={key}
-                  onClick={() => {
-                    navigate(`/chat/${obj?.chatId}`);
-                  }}
-                >
-                  <Message />
-                  {obj?.prompt}
-                </button>
-              );
-            }
-          })}
+  {history?.map((obj, key) => {
+    if (obj?.active) {
+      return (
+        <div key={key} className="chat-item">
+          <button
+            className="active"
+            onClick={() => {
+              navigate(`/chat/${obj?.chatId}`);
+            }}
+          >
+            <Message />
+            {obj?.prompt}
+          </button>
+          <span
+            className="delete-button"
+            onClick={() => deleteChat(obj?.chatId)} // Define deleteChat function
+          >
+            <Trash />
+          </span>
         </div>
+      );
+    } else {
+      return (
+        <div key={key} className="chat-item">
+          <button
+             className="active"
+            onClick={() => {
+              navigate(`/chat/${obj?.chatId}`);
+            }}
+          >
+            <Message />
+            {obj?.prompt}
+          </button>
+          <span
+            className="delete-button"
+            onClick={() => deleteChat(obj?.chatId)} // Define deleteChat function
+          >
+            <Trash />
+          </span>
+        </div>
+      );
+    }
+  })}
+</div>
+
 
         <div className="actions">
           {history?.length > 0 && (
