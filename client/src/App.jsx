@@ -7,10 +7,10 @@ import Loading from "./components/loading/loading";
 import { lazy } from "react";
 
 const Main = lazy(() => import("./page/chat"));
-const Login = lazy(() => import("./page/Login"));
-const Signup = lazy(() => import("./page/Signup"));
-const Forgot = lazy(() => import("./page/Forgot"));
-const ErrorPage = lazy(() => import("./page/Error"));
+const Login = lazy(() => import("./page/login"));
+const Signup = lazy(() => import("./page/signup"));
+const Forgot = lazy(() => import("./page/forgot"));
+const ErrorPage = lazy(() => import("./page/error"));
 
 const App = () => {
   const [offline, setOffline] = useState(!window.navigator.onLine);
