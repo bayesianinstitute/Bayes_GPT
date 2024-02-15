@@ -5,6 +5,13 @@ import { Error, Forgot, Login, Main, Signup } from "./page";
 import { useSelector } from "react-redux";
 import ProtectedRoute from "./protected";
 import Loading from "./components/loading/loading";
+import { lazy } from "react";
+
+const Main = lazy(() => import("./page/chat"));
+const Login = lazy(() => import("./page/login"));
+const Signup = lazy(() => import("./page/signup"));
+const Forgot = lazy(() => import("./page/forgot"));
+const ErrorPage = lazy(() => import("./page/error"));
 
 const App = () => {
   const [offline, setOffline] = useState(!window.navigator.onLine);
