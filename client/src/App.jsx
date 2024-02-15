@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from "react";
 import { Menu } from "./components";
 import { Routes, Route } from "react-router-dom";
-import { Error, Forgot, Login, Main, Signup } from "./page";
 import { useSelector } from "react-redux";
 import ProtectedRoute from "./protected";
 import Loading from "./components/loading/loading";
