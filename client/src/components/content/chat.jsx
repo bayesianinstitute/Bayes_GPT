@@ -14,8 +14,7 @@ import "./style.scss";
 
 import { LazyLoadImage } from "react-lazy-load-image-component";
 
-
-const Chat = forwardRef(({ error, status }, ref) => {
+const Chat = forwardRef(({ error, status, warning }, ref) => {
   const dispatch = useDispatch();
 
   const contentRef = useRef(null);
@@ -115,11 +114,20 @@ const Chat = forwardRef(({ error, status }, ref) => {
               <RobotIcon />
 
               {error && <span>!</span>}
+              {warning && <span>! </span>}
             </div>
             <div className="txt">
-              {error ? (
-                <div className="error">Something went wrong.</div>
-              ) : !status?.resume ? (
+              {warning && (
+                <div className="warning">
+                  Your request was rejected as a result of our safety system.
+                  Your prompt may contain text that is not allowed by our safety
+                  system.
+                </div>
+              )}
+              {error && (
+                <div className="warning">Something went wrong. Try Again</div>
+              )}
+              {!status?.resume && !warning && !error && (
                 <div className="blink">
                   <ReactMarkdown children={latest?.content} />
                   {latest?.imageUrl && (
@@ -130,7 +138,8 @@ const Chat = forwardRef(({ error, status }, ref) => {
                     />
                   )}
                 </div>
-              ) : (
+              )}
+              {status?.resume && !warning && !error && (
                 <span className="loading-text">Loading....</span>
               )}
             </div>

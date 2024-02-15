@@ -11,30 +11,22 @@ import multer from "multer";
 import https from "https";
 import fs from "fs";
 
-
 dotnet.config();
 
 let router = Router();
 let chatId;
 let sendingError;
-// Multer storage configuration
-// Multer storage configuration
-// const storage = multer.diskStorage({
-//   destination: function (req, file, cb) {
-//     const folderPath = 'image-generation'; // Folder path
-//     if (!fs.existsSync(folderPath)) {
-//       fs.mkdirSync(folderPath);
-//     }
-//     cb(null, folderPath); // Destination folder
-//   },
-//   filename: function (req, file, cb) {
-//     const timestamp = Date.now(); // Get the current timestamp
-//     const filename = `${timestamp}-${file.originalname}`; // Combine timestamp and original filename
-//     cb(null, filename); // Set the filename
-//   },
-// });
+function createSendingErrorMessage(err) {
+  return "Error in post: " + err.toString();
+}
 
-// const upload = multer({ storage: storage });
+function extractErrorDetails(err) {
+  const errorMessage = err.toString();
+  const match = errorMessage.match(/\b\d+\b/);
+  const number = match ? parseInt(match[0]) : null;
+  const errorText = errorMessage.replace(/\b\d+\b/, "").trim();
+  return { number, errorText };
+}
 const openai = new OpenAI({
   organization: process.env.OPENAI_ORGANIZATION,
   apiKey: process.env.OPENAI_API_KEY,
@@ -141,8 +133,6 @@ router.post("/", CheckUser, async (req, res) => {
   await chat.saveConversation(chatId, conversation); // Save conversation to the database
   try {
     const modelType = await chat.getModelType(userId);
-    // const modelType = "dall-e-3";
-    console.log("modelType in post :", modelType);
 
     if (modelType === "dall-e-3") {
       const response = await openai.images.generate({
@@ -156,15 +146,13 @@ router.post("/", CheckUser, async (req, res) => {
         console.log(revisedPrompt);
         console.log(url);
 
-        
         const timestamp = Date.now(); // Get the current timestamp
         const imagePath = `image-generation/${timestamp}.jpg`; // Construct the image path
-        
-       
+
         const file = fs.createWriteStream(imagePath);
-        const request = https.get(url, function(response) {
+        const request = https.get(url, function (response) {
           response.pipe(file);
-          file.on('finish', function() {
+          file.on("finish", function () {
             file.close();
           });
         });
@@ -172,10 +160,10 @@ router.post("/", CheckUser, async (req, res) => {
         response.openai = revisedPrompt;
         response.url = `${process.env.SITE_URL}:${process.env.PORT}/${imagePath}`;
 
+
+
         response.db = await chat.newResponse(prompt, response, userId, chatId);
-
         
-
         
         if (response.db && response.openai && response.url) {
           res.status(200).json({
@@ -214,61 +202,55 @@ router.post("/", CheckUser, async (req, res) => {
 
         await chat.saveConversation(chatId, conversation); // Save conversation to the database
 
-
-
         if (response.db && response.openai) {
           res.status(200).json({
             status: 200,
             message: "Success",
             data: {
               _id: response.db["chatId"],
-              content: response.openai
+              content: response.openai,
             },
           });
         } else {
-          // sendingError = "Error in response chat" + err;
+          sendingError = "Error in response chat" + err;
 
           // sendErrorEmail(sendingError);
-          res.status(500).json({
-            status: 500,
-            message: "Incomplete response",
-          });
+          console.log(sendingError);
+          if (response.errorCode === 400) {
+            res.status(400).json({
+              status: 400,
+              message:
+                "Your request was rejected as a result of our safety system. Your prompt may contain text that is not allowed by our safety system.",
+            });
+          } else {
+            res.status(500).json({
+              status: 500,
+              message: "Incomplete response",
+            });
+          }
         }
       }
     }
   } catch (err) {
-    // sendingError = "Error in post" + err;
+    const sendingError = createSendingErrorMessage(err);
+    console.log(sendingError);
 
-    // sendErrorEmail(sendingError);
+    const { number, errorText } = extractErrorDetails(err);
 
-    res.status(500).json({
+    if (number === 400) {
+      return res.status(400).json({
+        status: 400,
+        message:
+          errorText ||
+          "Your request was rejected as a result of our safety system. Your prompt may contain text that is not allowed by our safety system.",
+      });
+    }
+
+    return res.status(500).json({
       status: 500,
-      message: err,
+      message: errorText || "Internal server error",
     });
-    return;
   }
-
-  // if (response.db && response.openai) {
-  //   // conversationMemory[chatId] = conversation;
-
-  //   res.status(200).json({
-  //     status: 200,
-  //     message: "Success",
-  //     data: {
-  //       _id: response.db["chatId"],
-  //       content: response.openai,
-  //     },
-  //   });
-  // } else {
-  //   // sendingError = "Error in response chat" + err;
-
-  //   // sendErrorEmail(sendingError);
-
-  //   res.status(500).json({
-  //     status: 500,
-  //     message: "Incomplete response",
-  //   });
-  // }
 });
 
 router.put("/", CheckUser, async (req, res) => {
@@ -279,7 +261,7 @@ router.put("/", CheckUser, async (req, res) => {
     const modelType = await chat.getModelType(userId);
     // const modelType = "dall-e-3";
     console.log("modelType in put :", modelType);
-    console.log("chatid",chatId,userId);
+    console.log("chatid", chatId, userId);
     if (modelType === "dall-e-3") {
       const responseFromOpenAI = await openai.images.generate({
         model: modelType,
@@ -294,21 +276,19 @@ router.put("/", CheckUser, async (req, res) => {
 
         const timestamp = Date.now(); // Get the current timestamp
         const imagePath = `image-generation/${timestamp}.jpg`; // Construct the image path
-          // Create the directory and any necessary subdirectories recursively if they don't exist
-       
+        // Create the directory and any necessary subdirectories recursively if they don't exist
 
         const file = fs.createWriteStream(imagePath);
-        const request = https.get(url, function(response) {
+        const request = https.get(url, function (response) {
           response.pipe(file);
-          file.on('finish', function() {
+          file.on("finish", function () {
             file.close();
           });
         });
- 
-        console.log("imagePath",imagePath)
+
+        console.log("imagePath", imagePath);
         response.openai = revisedPrompt;
         response.url = `${process.env.SITE_URL}:${process.env.PORT}/${imagePath}`;
-
 
         response.db = await chat.updateChat(chatId, prompt, response, userId);
 
@@ -336,7 +316,7 @@ router.put("/", CheckUser, async (req, res) => {
     } else {
       console.log("BYE");
       let conversation = await chat.getConversation(chatId);
-      console.log("conversation",conversation);
+      console.log("conversation", conversation);
       conversation.push({ role: "user", content: prompt });
 
       response = await openai.chat.completions.create({
@@ -347,7 +327,7 @@ router.put("/", CheckUser, async (req, res) => {
 
       if (response.choices[0]?.message?.content) {
         let assistantReply = response.choices[0]?.message?.content;
-        console.log("Assistant",assistantReply);
+        console.log("Assistant", assistantReply);
         response.openai = assistantReply;
         response.db = await chat.updateChat(chatId, prompt, response, userId);
 
@@ -372,10 +352,23 @@ router.put("/", CheckUser, async (req, res) => {
       }
     }
   } catch (err) {
-    console.log("err :" + err);
-    res.status(500).json({
+    const sendingError = createSendingErrorMessage(err);
+    console.log(sendingError);
+
+    const { number, errorText } = extractErrorDetails(err);
+
+    if (number === 400) {
+      return res.status(400).json({
+        status: 400,
+        message:
+          errorText ||
+          "Your request was rejected as a result of our safety system. Your prompt may contain text that is not allowed by our safety system.",
+      });
+    }
+
+    return res.status(500).json({
       status: 500,
-      message: "Internal Server Error",
+      message: errorText || "Internal server error",
     });
   }
 });
@@ -586,18 +579,18 @@ router.post("/deleteCode", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-router.delete("/chats/:chatId",CheckUser, async (req, res) => {
+router.delete("/chats/:chatId", CheckUser, async (req, res) => {
   const { chatId } = req.params;
   const userId = req.body.userId;
- 
+
   try {
     if (!chatId) {
       return res.status(400).json({ error: "Invalid or missing chat ID." });
     }
 
     // Assuming chat.deleteChat is a function that deletes the chat based on chatId
-    const result = await chat.deleteChat(userId,chatId);
-    
+    const result = await chat.deleteChat(userId, chatId);
+
     if (!result) {
       return res.status(404).json({ error: "Chat not found." });
     }

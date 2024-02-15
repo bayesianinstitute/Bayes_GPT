@@ -331,3 +331,24 @@ img {
     object-fit: contain; // Ensure the image fits within its dimensions while maintaining aspect ratio
     
   }
+
+.warning {
+    background-color: #ffe6e6; // Light red background
+    color: #cc0000; // Dark red text
+    border: 1px solid #cc0000; // Dark red border
+    padding: 10px; // Padding around the text
+    
+    // Optional: Add some rounded corners for a softer look
+    border-radius: 5px;
+    
+    // Optional: Add a box shadow for depth
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    
+    // Optional: Adjust font properties
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    
+    // Optional: Add margin to separate from surrounding elements
+    margin-bottom: 10px;
+  }

@@ -27,6 +27,14 @@ const reducer = (state, { type, status }) => {
         loading: state.loading,
         actionBtns: state.actionBtns,
       };
+    case "warning":
+      return {
+        chat: true,
+        warning: status,
+        resume: state.resume,
+        loading: state.loading,
+        actionBtns: state.actionBtns,
+      };
     case "resume":
       return {
         chat: true,
@@ -34,6 +42,7 @@ const reducer = (state, { type, status }) => {
         loading: status,
         actionBtns: true,
       };
+
     default:
       return state;
   }
@@ -47,7 +56,6 @@ const Main = () => {
   const dispatch = useDispatch();
 
   const chatRef = useRef();
-
 
   const { id = null } = useParams();
 
@@ -103,7 +111,12 @@ const Main = () => {
     <div className="main">
       <div className="contentArea">
         {status.chat ? (
-          <Chat ref={chatRef} status={status} error={status.error} />
+          <Chat
+            ref={chatRef}
+            status={status}
+            error={status.error}
+            warning={status.warning}
+          />
         ) : (
           <New />
         )}
@@ -111,7 +124,10 @@ const Main = () => {
       <InputArea status={status} chatRef={chatRef} stateAction={stateAction} />
       {isUserExpired && (
         <div className="expiredAlert">
-          <p>Your invitation code has expired. Please update it to continue.Goto Setting and then Update Invitation Code</p>
+          <p>
+            Your invitation code has expired. Please update it to continue.Goto
+            Setting and then Update Invitation Code
+          </p>
         </div>
       )}
     </div>
@@ -120,7 +136,6 @@ const Main = () => {
 
 //Input Area
 const InputArea = ({ status, chatRef, stateAction }) => {
-  
   let textAreaRef = useRef();
 
   const navigate = useNavigate();
@@ -130,10 +145,9 @@ const InputArea = ({ status, chatRef, stateAction }) => {
   const { user } = useSelector((state) => state);
   const isUserExpired = user.expireAt && new Date(user.expireAt) < new Date();
 
-
   const { prompt, content, _id } = useSelector((state) => state.messages);
 
-  const [textSubmitted,setTextSubmitted]=useState(false);
+  const [textSubmitted, setTextSubmitted] = useState(false);
 
   const FormHandle = async () => {
     if (prompt?.length > 0) {
@@ -145,7 +159,7 @@ const InputArea = ({ status, chatRef, stateAction }) => {
       chatRef?.current?.clearResponse();
 
       dispatch(livePrompt(""));
- 
+
       setTextSubmitted(true);
 
       if (textAreaRef.current) {
@@ -168,20 +182,31 @@ const InputArea = ({ status, chatRef, stateAction }) => {
         }
       } catch (err) {
         console.log(err);
+
         if (err?.response?.data?.status === 405) {
           dispatch(emptyUser());
           dispatch(emptyAllRes());
           navigate("/login");
+        } else if (err?.response?.status === 400) {
+          stateAction({ type: "resume", status: false });
+          stateAction({ type: "warning", status: true });
         } else {
+          stateAction({ type: "resume", status: false });
+
           stateAction({ type: "error", status: true });
         }
       } finally {
         if (res?.data) {
-          const { _id, content,imageUrl } = res?.data?.data;
-          {console.log("response",_id, content,imageUrl)};
-          // dispatch(insertNew({ _id, fullContent: content,imageUrl, chatsId }));
+          const { _id, content, imageUrl } = res?.data?.data;
 
-          chatRef?.current?.loadResponse(stateAction, content,imageUrl, chatsId);
+          dispatch(insertNew({ _id, chatsId }));
+
+          chatRef?.current?.loadResponse(
+            stateAction,
+            content,
+            imageUrl,
+            chatsId
+          );
 
           // Stop animation
           stateAction({ type: "resume", status: false });
@@ -192,22 +217,19 @@ const InputArea = ({ status, chatRef, stateAction }) => {
     }
   };
 
-    useEffect(() => {
+  useEffect(() => {
     const adjustTextAreaHeight = () => {
       textAreaRef.current.style.height = "auto"; // Reset height to auto
-      textAreaRef.current.style.height = textAreaRef.current.scrollHeight + "px";
-      
+      textAreaRef.current.style.height =
+        textAreaRef.current.scrollHeight + "px";
     };
 
     textAreaRef.current.addEventListener("input", adjustTextAreaHeight);
 
-
     if (textAreaRef.current && prompt.length === 0 && textSubmitted) {
-      textAreaRef.current.style.height="31 px"
+      textAreaRef.current.style.height = "31 px";
     }
-    
-  }, [prompt,textSubmitted]);
-
+  }, [prompt, textSubmitted]);
 
   const handleKeyDown = (e) => {
     if (e.ctrlKey && e.key === "Enter") {
@@ -218,97 +240,86 @@ const InputArea = ({ status, chatRef, stateAction }) => {
 
   return (
     <div className="inputArea">
-      {!status.error ? (
-        <>
-          <div className="chatActionsLg">
-            {status.chat && content?.length > 0 && status.actionBtns && (
-              <>
-                {!status?.resume ? ( null
-                  // <button
-                  //   onClick={() => {
-                  //     chatRef.current.loadResponse(stateAction);
-                  //   }}
-                  // >
-                  //   <Reload /> Regenerate response
-                  // </button>
-                )  : (
+      <>
+        <div className="chatActionsLg">
+          {status.chat && content?.length > 0 && status.actionBtns && (
+            <>
+              {!status?.resume ? (
+                <button
+                  onClick={() => {
+                    chatRef.current.loadResponse(stateAction);
+                  }}
+                >
+                  <Reload /> Regenerate response
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    chatRef.current.stopResponse(stateAction);
+                  }}
+                >
+                  <Stop /> Stop generating
+                </button>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="flexBody">
+          <div className="box">
+            <textarea
+              placeholder="Press Ctrl+Enter To Submit..."
+              ref={textAreaRef}
+              value={prompt}
+              onChange={(e) => {
+                dispatch(livePrompt(e.target.value));
+              }}
+              onKeyDown={handleKeyDown}
+              disabled={isUserExpired} // Add this line to disable textarea when user is expired
+            />
+
+            {!status?.loading ? (
+              <button onClick={FormHandle}>{<Rocket />}</button>
+            ) : (
+              <div className="loading">
+                <div className="dot" />
+                <div className="dot-2 dot" />
+                <div className="dot-3 dot" />
+              </div>
+            )}
+          </div>
+
+          {status.chat && content?.length > 0 && status.actionBtns && (
+            <>
+              {!status?.resume ? (
+                <div className="chatActionsMd">
+                  <button
+                    onClick={() => {
+                      chatRef.current.loadResponse(stateAction);
+                    }}
+                  >
+                    <Reload />
+                  </button>
+                </div>
+              ) : (
+                <div className="chatActionsMd">
                   <button
                     onClick={() => {
                       chatRef.current.stopResponse(stateAction);
                     }}
                   >
-                    <Stop /> Stop generating
+                    <Stop />
                   </button>
-                )}
-              </>
-            )}
-          </div>
-
-          <div className="flexBody">
-            <div className="box">
-
-            <textarea
-                    placeholder="Press Ctrl+Enter To Submit..."
-                    ref={textAreaRef}
-                    value={prompt}
-                    onChange={(e) => {
-                      dispatch(livePrompt(e.target.value));
-                    }}
-                    onKeyDown={handleKeyDown}
-                    disabled={isUserExpired} // Add this line to disable textarea when user is expired
-                  />
-
-              {!status?.loading ? (
-                <button onClick={FormHandle}>{<Rocket />}</button>
-              ) : (
-                <div className="loading">
-                  <div className="dot" />
-                  <div className="dot-2 dot" />
-                  <div className="dot-3 dot" />
                 </div>
               )}
-            </div>
-
-            {status.chat && content?.length > 0 && status.actionBtns && (
-              <>
-                {!status?.resume ? (
-                  <div className="chatActionsMd">
-                    <button
-                      onClick={() => {
-                        chatRef.current.loadResponse(stateAction);
-                      }}
-                    >
-                      <Reload />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="chatActionsMd">
-                    <button
-                      onClick={() => {
-                        chatRef.current.stopResponse(stateAction);
-                      }}
-                    >
-                      <Stop />
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </>
-      ) : (
-        <div className="error">
-          <p>There was an error generating a response</p>
-          <button onClick={FormHandle}>
-            <Reload />
-            Regenerate response
-          </button>
+            </>
+          )}
         </div>
-      )}
+      </>
 
       <div className="text">
-        Free Bayes Preview Research. Our goal is to make AI systems more natural and
-        safe to interact with. Your feedback will help us improve.
+        Free Bayes Preview Research. Our goal is to make AI systems more natural
+        and safe to interact with. Your feedback will help us improve.
       </div>
     </div>
   );
