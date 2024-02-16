@@ -4,7 +4,6 @@ import OpenAI from "openai";
 import user from "../helpers/user.js";
 import jwt from "jsonwebtoken";
 import chat from "../helpers/chat.js";
-// import { getChatId } from "../helpers/chat.js";
 import { ObjectId } from "mongodb";
 
 import { sendErrorEmail } from "../mail/send.js";
@@ -75,11 +74,11 @@ router.get("/", (req, res) => {
   res.send("Welcome to chatGPT api v1");
 });
 
-// Example API endpoint to get and update model type
+
 router.get("/modelType", CheckUser, async (req, res) => {
   const userId = req.body.userId;
   try {
-    // Call your getModelType function
+    
     const modelType = await chat.getModelType(userId);
 
     res.status(200).json({
@@ -100,7 +99,7 @@ router.put("/modelType", CheckUser, async (req, res) => {
   const userId = req.body.userId;
   const modelType = req.body.modelType;
   try {
-    // Call your saveModelType function
+   
     await chat.saveModelType(userId, modelType);
 
     res.status(200).json({
@@ -121,7 +120,7 @@ router.post("/", CheckUser, async (req, res) => {
   chatId = new ObjectId().toHexString();
 
   let response = {};
-  console.log("chatId in router in post :", chatId);
+
 
   let conversation = [
     {
@@ -130,8 +129,8 @@ router.post("/", CheckUser, async (req, res) => {
         " Your name is Bayes CHAT-AI.  Strictly follow the users instructions. Please Understand Query try to reply to it in Efficient Way.  You were created by Bayes Solution  .You Should able to translate in different Language if user ask.Give content in Mardown Format Only",
     },
   ];
-  console.log("prompt in post :", prompt);
-  await chat.saveConversation(chatId, conversation); // Save conversation to the database
+
+  await chat.saveConversation(chatId, conversation); 
   try {
     const modelType = await chat.getModelType(userId);
 
@@ -143,12 +142,11 @@ router.post("/", CheckUser, async (req, res) => {
       if (response?.data) {
         let revisedPrompt = response.data[0].revised_prompt;
         let url = response.data[0].url;
-        // let assistantReply = response.choices[0]?.message?.content;
-        console.log(revisedPrompt);
-        console.log(url);
+       
 
-        const timestamp = Date.now(); // Get the current timestamp
-        const imagePath = `image-generation/${timestamp}.jpg`; // Construct the image path
+
+        const timestamp = Date.now(); 
+        const imagePath = `image-generation/${timestamp}.jpg`; 
 
         const file = fs.createWriteStream(imagePath);
         const request = https.get(url, function (response) {
@@ -191,7 +189,7 @@ router.post("/", CheckUser, async (req, res) => {
         messages: conversation,
         temperature: 0.6,
       });
-      // console.log("response in post :", response);
+      
 
       if (response.choices[0]?.message?.content) {
         let assistantReply = response.choices[0]?.message?.content;
@@ -201,7 +199,7 @@ router.post("/", CheckUser, async (req, res) => {
 
         conversation.push({ role: "assistant", content: assistantReply });
 
-        await chat.saveConversation(chatId, conversation); // Save conversation to the database
+        await chat.saveConversation(chatId, conversation); 
 
         if (response.db && response.openai) {
           res.status(200).json({
@@ -216,7 +214,6 @@ router.post("/", CheckUser, async (req, res) => {
           sendingError = "Error in response chat" + err;
 
           // sendErrorEmail(sendingError);
-          console.log(sendingError);
           if (response.errorCode === 400) {
             res.status(400).json({
               status: 400,
@@ -261,8 +258,7 @@ router.put("/", CheckUser, async (req, res) => {
   try {
     const modelType = await chat.getModelType(userId);
     // const modelType = "dall-e-3";
-    console.log("modelType in put :", modelType);
-    console.log("chatid", chatId, userId);
+
     if (modelType === "dall-e-3") {
       const responseFromOpenAI = await openai.images.generate({
         model: modelType,
@@ -272,12 +268,10 @@ router.put("/", CheckUser, async (req, res) => {
       if (responseFromOpenAI?.data) {
         let revisedPrompt = responseFromOpenAI.data[0].revised_prompt;
         let url = responseFromOpenAI.data[0].url;
-        console.log(revisedPrompt);
-        console.log(url);
 
-        const timestamp = Date.now(); // Get the current timestamp
-        const imagePath = `image-generation/${timestamp}.jpg`; // Construct the image path
-        // Create the directory and any necessary subdirectories recursively if they don't exist
+        const timestamp = Date.now(); 
+        const imagePath = `image-generation/${timestamp}.jpg`; 
+       
 
         const file = fs.createWriteStream(imagePath);
         const request = https.get(url, function (response) {
@@ -287,7 +281,6 @@ router.put("/", CheckUser, async (req, res) => {
           });
         });
 
-        console.log("imagePath", imagePath);
         response.openai = revisedPrompt;
         response.url = `${process.env.SITE_URL}:${process.env.PORT}/${imagePath}`;
 
@@ -315,9 +308,7 @@ router.put("/", CheckUser, async (req, res) => {
         });
       }
     } else {
-      console.log("BYE");
       let conversation = await chat.getConversation(chatId);
-      console.log("conversation", conversation);
       conversation.push({ role: "user", content: prompt });
 
       response = await openai.chat.completions.create({
@@ -328,13 +319,12 @@ router.put("/", CheckUser, async (req, res) => {
 
       if (response.choices[0]?.message?.content) {
         let assistantReply = response.choices[0]?.message?.content;
-        console.log("Assistant", assistantReply);
         response.openai = assistantReply;
         response.db = await chat.updateChat(chatId, prompt, response, userId);
 
         conversation.push({ role: "assistant", content: assistantReply });
 
-        await chat.saveConversation(chatId, conversation); // Save updated conversation to the database
+        await chat.saveConversation(chatId, conversation); 
       }
 
       if (response.db && response.openai) {
@@ -492,7 +482,7 @@ router.get("/userDetails", CheckUser, async (req, res) => {
 });
 
 router.post("/generateInvitationCodes", async (req, res) => {
-  const { n, partner_name } = req.body; // Assuming 'n' is the number of codes to generate
+  const { n, partner_name } = req.body; 
 
   try {
     if (!n || isNaN(n) || n <= 0 || !partner_name) {
@@ -505,26 +495,21 @@ router.post("/generateInvitationCodes", async (req, res) => {
       parseInt(n),
       partner_name
     );
-    console.log(result);
     res.status(200).json(result);
   } catch (error) {
-    console.error("Error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
 router.put("/update-invitation-code", CheckUser, async (req, res) => {
   const userId = req.body.userId;
   const invitationCode = req.body.code;
-  console.log(invitationCode);
-  console.log("UserId ", userId);
 
   try {
-    // Call your updateInvitationCode function
     const update = await chat.updateInvitationCode(userId, invitationCode);
 
     res.status(200).json({ update });
   } catch (err) {
-    console.error("Error updating invitation code:", err); // Log the error
+  
     res.status(500).json({
       status: 500,
       message: err || "Internal Server Error",
@@ -545,7 +530,6 @@ router.post("/fetchInvitationCodesByPartnerName", async (req, res) => {
     const codes = await chat.fetchInvitationCodesByPartnerName(partner_name);
     res.status(200).json({ codes });
   } catch (error) {
-    console.error("Error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -561,7 +545,6 @@ router.post("/checkCodeAvailability", async (req, res) => {
     const result = await chat.checkCodeAvailability(code);
     res.status(200).json(result);
   } catch (error) {
-    console.error("Error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -576,7 +559,6 @@ router.post("/deleteCode", async (req, res) => {
     const result = await chat.deleteCode(userId, code);
     res.status(200).json(result);
   } catch (error) {
-    console.error("Error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -588,8 +570,6 @@ router.delete("/chats/:chatId", CheckUser, async (req, res) => {
     if (!chatId) {
       return res.status(400).json({ error: "Invalid or missing chat ID." });
     }
-
-    // Assuming chat.deleteChat is a function that deletes the chat based on chatId
     const result = await chat.deleteChat(userId, chatId);
 
     if (!result) {
@@ -598,7 +578,6 @@ router.delete("/chats/:chatId", CheckUser, async (req, res) => {
 
     res.status(200).json({ message: "Chat deleted successfully." });
   } catch (error) {
-    console.error("Error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });

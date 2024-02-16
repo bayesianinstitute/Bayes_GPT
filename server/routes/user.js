@@ -275,8 +275,7 @@ router.get('/login', CheckLogged, async (req, res) => {
     };
   
     if (req.query?.manual === 'false') {
-      // reCAPTCHA verification for Google login
-      const recaptchaToken = req.query.recaptchaToken; // The reCAPTCHA token passed from the client
+      const recaptchaToken = req.query.recaptchaToken; 
       const verified = await recaptcha(recaptchaSecretKey, recaptchaToken);
   
       if (verified) {

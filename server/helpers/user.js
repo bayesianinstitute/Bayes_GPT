@@ -22,7 +22,6 @@ export default {
           });
 
         if (!invitationDocument) {
-          console.log(`Code ${inviteCode} not found.`);
           reject({ message: `Code ${inviteCode} not found.` });
           return;
         }
@@ -160,21 +159,17 @@ export default {
         });
 
       if (data) {
-        console.log("data: ", data);
         let { pass, email, inviteCode } = data;
         email = email.replace("_register", "");
         let modelType="gpt-4-1106-preview"
         let res = null;
         let uid = new ObjectId(_id);
         try {
-          // Calculate expiration date (30 days from now)
           const expirationDate = new Date();
           expirationDate.setDate(expirationDate.getDate() + 30);
-          console.log("expirationDate: ", expirationDate);
           const invitationDocument = await db
             .collection(collections.INVITATION)
             .findOne({ codes: inviteCode });
-          console.log("inviation : ", invitationDocument);
           if (!invitationDocument) {
             reject({ message: `Code ${inviteCode} not found.` });
             return;
@@ -195,21 +190,17 @@ export default {
             expireAt: expirationDate,
           });
 
-          console.log("res :", res);
-          
           const setting =await db.collection(collections.SETTING)
           .insertOne({
               userId : uid  ,
               modelType : modelType,
             });
 
-          console.log("Setting : ", setting);
 
           const result = await db
             .collection(collections.INVITATION)
             .updateOne({ codes: inviteCode }, { $pull: { codes: inviteCode } });
 
-          console.log(result);
         } catch (err) {
           if (err?.code === 11000) {
             reject({ status: 422 });
@@ -461,20 +452,6 @@ export default {
           reject({ notExists: true, text: "Not found" });
           return;
         }
-
-        // const currentDate = new Date();
-        // const expireCodeTime = user.expireAt;
-        // console.log(expireCodeTime);
-
-
-        // // Check if expiration date has passed
-        // if (expireCodeTime && currentDate > expireCodeTime) {
-        //   let mess=`Invitation code has expired . please subscribe new code to continue`
-        //   console.log(mess)
-        //   // sendErrorEmail(mess)
-        //   reject({ status: 410,expired: true, text: "Invitation code has expired" });
-        //   return;
-        // }
 
         resolve(user);
       } catch (err) {

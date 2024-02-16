@@ -6,9 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 const chatHelper = {
   newResponse: (prompt, { openai, url }, userId, chatId) => {
     return new Promise(async (resolve, reject) => {
-      console.log("helper chatId", chatId);
-      console.log("helper userId", userId);   
-      console.log("url", url);
+
 
       let res = null;
       try {
@@ -79,7 +77,6 @@ const chatHelper = {
         user: userId.toString(),
         "data.chatId": chatId,
       };
-      console.log("url",url)
       // Create the chat object with or without imageUrl based on the existence of url
       let chatObject = {
         prompt,
@@ -253,7 +250,6 @@ const chatHelper = {
         )
         .then((res) => {
           resolve(res);
-          console.log(res);
         })
         .catch((err) => {
           reject(err);
@@ -270,11 +266,11 @@ const chatHelper = {
         .then((res) => {
           if (res) {
             resolve(res.modelType);
-            // console.log("found model type " + res.modelType);
+          
           } else {
-            // Return the default value if modelType is not found
+           
             resolve(defaultValue);
-            console.log("default model type " + res.modelType);
+           
           }
         })
         .catch((err) => {
@@ -323,7 +319,6 @@ const chatHelper = {
         const invitationExists = await db
           .collection(collections.INVITATION)
           .findOne({ codes: invitationCode });
-        console.log(invitationExists);
         if (invitationExists) {
           // Update USER collection
           const userUpdateResult = await db
@@ -340,8 +335,7 @@ const chatHelper = {
               }
             );
 
-          console.log("userUpdateResult", userUpdateResult);
-
+    
           if (userUpdateResult.modifiedCount > 0) {
             // Remove the code from INVITATION collection
             const removeCodeResult = await db
@@ -351,8 +345,7 @@ const chatHelper = {
                 { $pull: { codes: invitationCode } }
               );
 
-            console.log("removeCodeResult", removeCodeResult);
-
+       
             resolve({
               success: true,
               message: "Invitation code updated successfully.",
