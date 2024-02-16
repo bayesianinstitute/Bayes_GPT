@@ -74,7 +74,7 @@ const Chat = forwardRef(({ error, status, warning }, ref) => {
             <Fragment key={key}>
               <div className="qs">
                 <div className="acc">{user?.fName?.charAt(0)}</div>
-                <div className="txt1">
+                <div className="txt">
                   <ReactMarkdown children={obj?.prompt} />
                 </div>
               </div>
