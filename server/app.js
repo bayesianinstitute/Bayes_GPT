@@ -10,6 +10,7 @@ import morgan from 'morgan';
 
 
 import { accessLogStream } from './utility/config.js';
+import { errorMiddleware } from './middleware/error.js';
 
 
 
@@ -36,6 +37,9 @@ app.use('/api/user/', UserRoute);
 app.get('/*',(req,res)=>{
     res.sendFile(path.join(`${path.resolve(path.dirname(''))}/dist/index.html`));
 });
+
+// Error Middleware
+app.use(errorMiddleware);
 
 connectDB((err) => {
     if (err) return console.log("MongoDB Connect Failed : ", err);
