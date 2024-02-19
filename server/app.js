@@ -9,7 +9,7 @@ import path from 'path';
 import morgan from 'morgan';
 
 
-import { accessLogStream } from './config.js';
+import { accessLogStream } from './utility/config.js';
 
 
 
