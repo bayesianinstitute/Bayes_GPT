@@ -3,7 +3,7 @@ import { sendErrorEmail } from "../mail/send.js";
 import { ObjectId } from "mongodb";
 
 import { openai } from "../utility/openAI.js";
-import { createSendingErrorMessage,extractErrorDetails } from "../utility/error.js";
+import { createSendingErrorMessage,extractErrorDetails } from "../utility/errors.js";
 
 
 import https from "https";

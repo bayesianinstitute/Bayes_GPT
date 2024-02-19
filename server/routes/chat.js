@@ -3,6 +3,7 @@ import { CheckUser } from "../middleware/user.js";
 import { addChat, deleteAllChat, deleteChat, getChat, getHistory, newChat, } from "../controllers/chat.js";
 import { createCodes, deleteCode, getCodes, updateCode, userDetails, validateCodes } from "../controllers/inivitationCode.js";
 import { UpdateModelType, modelType } from "../controllers/model.js";
+import adminOnly from "../middleware/auth.js";
 
 
 
@@ -29,10 +30,10 @@ router.delete("/chats/:chatId", CheckUser,deleteChat);
 router.get("/userDetails", CheckUser,userDetails );
 
 // Invitation Codes
-router.post("/generateInvitationCodes",createCodes);
+router.post("/generateInvitationCodes",adminOnly,createCodes);
 router.put("/update-invitation-code", CheckUser,updateCode);
-router.post("/fetchInvitationCodesByPartnerName",getCodes );
-router.post("/checkCodeAvailability",validateCodes);
-router.post("/deleteCode",deleteCode );
+router.post("/fetchInvitationCodesByPartnerName",adminOnly,getCodes );
+router.post("/checkCodeAvailability",CheckUser,validateCodes);
+router.post("/deleteCode",CheckUser,deleteCode );
 
 export default router;
