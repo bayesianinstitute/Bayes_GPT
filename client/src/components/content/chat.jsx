@@ -9,10 +9,14 @@ import { useDispatch, useSelector } from "react-redux";
 import { RobotIcon } from "../../assets";
 
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import SyntaxHighlighter from "react-syntax-highlighter";
+
 import { insertNew } from "../../redux/messages";
 import "./style.scss";
 
 import { LazyLoadImage } from "react-lazy-load-image-component";
+import { MarkdownRenderer } from "./markdown";
 
 const Chat = forwardRef(({ error, status, warning }, ref) => {
   const dispatch = useDispatch();
@@ -75,7 +79,7 @@ const Chat = forwardRef(({ error, status, warning }, ref) => {
               <div className="qs">
                 <div className="acc">{user?.fName?.charAt(0)}</div>
                 <div className="txt">
-                  <ReactMarkdown children={obj?.prompt} />
+                  <MarkdownRenderer content={obj?.prompt} />
                 </div>
               </div>
 
@@ -85,7 +89,7 @@ const Chat = forwardRef(({ error, status, warning }, ref) => {
                 </div>
                 <div className="txt">
                   <span>
-                    <ReactMarkdown children={obj?.content} />
+                    <MarkdownRenderer content={obj?.content} />
                     {obj.imageUrl && (
                       <LazyLoadImage
                         src={obj.imageUrl}
@@ -105,7 +109,7 @@ const Chat = forwardRef(({ error, status, warning }, ref) => {
           <div className="qs">
             <div className="acc">{user?.fName?.charAt(0)}</div>
             <div className="txt">
-              <ReactMarkdown children={latest?.prompt} />
+              <MarkdownRenderer content={latest?.prompt} />
             </div>
           </div>
 
@@ -129,7 +133,8 @@ const Chat = forwardRef(({ error, status, warning }, ref) => {
               )}
               {!status?.resume && !warning && !error && (
                 <div className="blink">
-                  <ReactMarkdown children={latest?.content} />
+                  <MarkdownRenderer content={latest?.content} />
+
                   {latest?.imageUrl && (
                     <LazyLoadImage
                       src={latest?.imageUrl}

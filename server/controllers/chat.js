@@ -2,12 +2,15 @@ import chat from "../helpers/chat.js";
 import { sendErrorEmail } from "../mail/send.js";
 import { ObjectId } from "mongodb";
 
-import { openai } from "../utility/openAI.js";
-import { createSendingErrorMessage,extractErrorDetails } from "../utility/errors.js";
-import { GoogleGenerativeAI} from "@google/generative-ai";
+import { openai, genAIModel } from "../utility/chatAI.js";
+import {
+  createSendingErrorMessage,
+  extractErrorDetails,
+} from "../utility/errors.js";
 
 import https from "https";
 import fs from "fs";
+import { formatHistory } from "../utility/feature.js";
 
 let chatId;
 let sendingError;
@@ -20,6 +23,10 @@ export const newChat = async (req, res) => {
   let response = {};
 
   let conversation = [
+    {
+      role: "user",
+      content: "what is your task ,",
+    },
     {
       role: "assistant",
       content:
@@ -73,35 +80,42 @@ export const newChat = async (req, res) => {
           });
         }
       }
-    }
-    else if (modelType === "Gemini")
-    {
-      const genAI = new GoogleGenerativeAI('AIzaSyBSRcu4DY1LYXgBFD-PLEY8irgw9xCRG4g');
-      const model = genAI.getGenerativeModel({ model: "gemini-pro"});
-      const chat = model.startChat({
-        history: [
-          {
-            role: "user",
-            parts: "Hello, I have 2 dogs in my house.",
-          },
-          {
-            role: "model",
-            parts: "Great to meet you. What would you like to know?",
-          },
-        ],
-        generationConfig: {
-          maxOutputTokens: 100,
-        },
+    } else if (modelType === "Gemini") {
+      let history = formatHistory(conversation, false);
+
+      const chatSession = genAIModel.startChat({
+        history: history,
       });
-    
-      const msg = "How many paws are in my house?";
-    
-      const result = await chat.sendMessage(msg);
-      const response = await result.response;
-      const text = response.text();
-      console.log(text);
-    }
-    else {
+
+      conversation.push({ role: "user", content: prompt });
+
+      const result = await chatSession.sendMessage(prompt);
+
+      if (result.response.text()) {
+        let assistantReply = result.response.text();
+
+        response.openai = assistantReply;
+        response.db = await chat.newResponse(prompt, response, userId, chatId);
+
+        conversation.push({ role: "assistant", content: assistantReply });
+
+        await chat.saveConversation(chatId, conversation);
+
+        res.status(200).json({
+          status: 200,
+          message: "Success",
+          data: {
+            _id: response.db["chatId"],
+            content: response.openai,
+          },
+        });
+      } else {
+        res.status(500).json({
+          status: 500,
+          message: "Incomplete response",
+        });
+      }
+    } else {
       conversation.push({ role: "user", content: prompt });
 
       response = await openai.chat.completions.create({
@@ -225,35 +239,44 @@ export const addChat = async (req, res) => {
           message: "Incomplete response from OpenAI",
         });
       }
-    }
-    else if (modelType === "Gemini")
-    {
-      const genAI = new GoogleGenerativeAI('AIzaSyBSRcu4DY1LYXgBFD-PLEY8irgw9xCRG4g');
-      const model = genAI.getGenerativeModel({ model: "gemini-pro"});
-      const chat = model.startChat({
-        history: [
-          {
-            role: "user",
-            parts: "Hello, I have 2 dogs in my house.",
-          },
-          {
-            role: "model",
-            parts: "Great to meet you. What would you like to know?",
-          },
-        ],
-        generationConfig: {
-          maxOutputTokens: 100,
-        },
+    } else if (modelType === "Gemini") {
+      let conversation = await chat.getConversation(chatId);
+
+      let history = formatHistory(conversation, false);
+
+      const chatSession = genAIModel.startChat({
+        history: history,
       });
-    
-      const msg = "How many paws are in my house?";
-    
-      const result = await chat.sendMessage(msg);
-      const response = await result.response;
-      const text = response.text();
-      console.log(text);
-    }
-    else {
+
+      const result = await chatSession.sendMessage(prompt);
+
+      if (result.response.text()) {
+        let assistantReply = result.response.text();
+        conversation.push({ role: "user", content: prompt });
+
+        response.openai = assistantReply;
+        response.db = await chat.updateChat(chatId, prompt, response, userId);
+
+        conversation.push({ role: "assistant", content: assistantReply });
+
+        await chat.saveConversation(chatId, conversation);
+
+        res.status(200).json({
+          status: 200,
+          message: "Success",
+          data: {
+            content: response.openai,
+          },
+        });
+      } else {
+        console.log("error response");
+        res.status(500).json({
+          status: 500,
+          message: "Incomplete response",
+        });
+      }
+
+    } else {
       let conversation = await chat.getConversation(chatId);
       conversation.push({ role: "user", content: prompt });
 
@@ -310,65 +333,65 @@ export const addChat = async (req, res) => {
   }
 };
 
-export const getChat= async (req, res) => {
-    const { userId } = req.body;
-    const { chatId = null } = req.query;
-  
-    let response = null;
-  
-    try {
-      response = await chat.getChat(userId, chatId);
-    } catch (err) {
-      if (err?.status === 404) {
-        res.status(404).json({
-          status: 404,
-          message: "Not found",
-        });
-      } else {
-        sendingError = "Error in getChat : ${err}";
-        sendErrorEmail(sendingError);
-        res.status(500).json({
-          status: 500,
-          message: err,
-        });
-      }
-    } finally {
-      if (response) {
-        res.status(200).json({
-          status: 200,
-          message: "Success",
-          data: response,
-        });
-      }
-    }
-  }
+export const getChat = async (req, res) => {
+  const { userId } = req.body;
+  const { chatId = null } = req.query;
 
-export const getHistory= async (req, res) => {
-    const { userId } = req.body;
-  
-    let response = null;
-  
-    try {
-      response = await chat.getHistory(userId);
-    } catch (err) {
-      sendingError = "Error in getting history " + err;
+  let response = null;
+
+  try {
+    response = await chat.getChat(userId, chatId);
+  } catch (err) {
+    if (err?.status === 404) {
+      res.status(404).json({
+        status: 404,
+        message: "Not found",
+      });
+    } else {
+      sendingError = "Error in getChat : ${err}";
       sendErrorEmail(sendingError);
       res.status(500).json({
         status: 500,
         message: err,
       });
-    } finally {
-      if (response) {
-        res.status(200).json({
-          status: 200,
-          message: "Success",
-          data: response,
-        });
-      }
+    }
+  } finally {
+    if (response) {
+      res.status(200).json({
+        status: 200,
+        message: "Success",
+        data: response,
+      });
     }
   }
+};
 
-export const deleteAllChat=async (req, res) => {
+export const getHistory = async (req, res) => {
+  const { userId } = req.body;
+
+  let response = null;
+
+  try {
+    response = await chat.getHistory(userId);
+  } catch (err) {
+    sendingError = "Error in getting history " + err;
+    sendErrorEmail(sendingError);
+    res.status(500).json({
+      status: 500,
+      message: err,
+    });
+  } finally {
+    if (response) {
+      res.status(200).json({
+        status: 200,
+        message: "Success",
+        data: response,
+      });
+    }
+  }
+};
+
+export const deleteAllChat = async (req, res) => {
   const { userId } = req.body;
 
   let response = null;
@@ -391,24 +414,24 @@ export const deleteAllChat=async (req, res) => {
       });
     }
   }
-}
+};
 
-export const deleteChat= async (req, res) => {
-    const { chatId } = req.params;
-    const userId = req.body.userId;
-  
-    try {
-      if (!chatId) {
-        return res.status(400).json({ error: "Invalid or missing chat ID." });
-      }
-      const result = await chat.deleteChat(userId, chatId);
-  
-      if (!result) {
-        return res.status(404).json({ error: "Chat not found." });
-      }
-  
-      res.status(200).json({ message: "Chat deleted successfully." });
-    } catch (error) {
-      res.status(500).json({ error: "Internal Server Error" });
+export const deleteChat = async (req, res) => {
+  const { chatId } = req.params;
+  const userId = req.body.userId;
+
+  try {
+    if (!chatId) {
+      return res.status(400).json({ error: "Invalid or missing chat ID." });
     }
+    const result = await chat.deleteChat(userId, chatId);
+
+    if (!result) {
+      return res.status(404).json({ error: "Chat not found." });
+    }
+
+    res.status(200).json({ message: "Chat deleted successfully." });
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
   }
+};
