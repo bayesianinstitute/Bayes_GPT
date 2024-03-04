@@ -505,6 +505,7 @@ const Modal = ({ changeColorMode, settingRef }) => {
             <option value="gpt-3.5-turbo">GPT-3.5-Turbo(Text)</option>
             <option value="gpt-4-1106-preview">GPT-4-Preview(Text)</option>
             <option value="dall-e-3">Dall-e-3(Image)</option>
+            <option value="Gemini">Gemini Google(Text)</option>
           </select>
         </div>
 

@@ -4,7 +4,7 @@ import { ObjectId } from "mongodb";
 
 import { openai } from "../utility/openAI.js";
 import { createSendingErrorMessage,extractErrorDetails } from "../utility/errors.js";
-
+import { GoogleGenerativeAI} from "@google/generative-ai";
 
 import https from "https";
 import fs from "fs";
@@ -73,7 +73,35 @@ export const newChat = async (req, res) => {
           });
         }
       }
-    } else {
+    }
+    else if (modelType === "Gemini")
+    {
+      const genAI = new GoogleGenerativeAI('AIzaSyBSRcu4DY1LYXgBFD-PLEY8irgw9xCRG4g');
+      const model = genAI.getGenerativeModel({ model: "gemini-pro"});
+      const chat = model.startChat({
+        history: [
+          {
+            role: "user",
+            parts: "Hello, I have 2 dogs in my house.",
+          },
+          {
+            role: "model",
+            parts: "Great to meet you. What would you like to know?",
+          },
+        ],
+        generationConfig: {
+          maxOutputTokens: 100,
+        },
+      });
+    
+      const msg = "How many paws are in my house?";
+    
+      const result = await chat.sendMessage(msg);
+      const response = await result.response;
+      const text = response.text();
+      console.log(text);
+    }
+    else {
       conversation.push({ role: "user", content: prompt });
 
       response = await openai.chat.completions.create({
@@ -197,7 +225,35 @@ export const addChat = async (req, res) => {
           message: "Incomplete response from OpenAI",
         });
       }
-    } else {
+    }
+    else if (modelType === "Gemini")
+    {
+      const genAI = new GoogleGenerativeAI('AIzaSyBSRcu4DY1LYXgBFD-PLEY8irgw9xCRG4g');
+      const model = genAI.getGenerativeModel({ model: "gemini-pro"});
+      const chat = model.startChat({
+        history: [
+          {
+            role: "user",
+            parts: "Hello, I have 2 dogs in my house.",
+          },
+          {
+            role: "model",
+            parts: "Great to meet you. What would you like to know?",
+          },
+        ],
+        generationConfig: {
+          maxOutputTokens: 100,
+        },
+      });
+    
+      const msg = "How many paws are in my house?";
+    
+      const result = await chat.sendMessage(msg);
+      const response = await result.response;
+      const text = response.text();
+      console.log(text);
+    }
+    else {
       let conversation = await chat.getConversation(chatId);
       conversation.push({ role: "user", content: prompt });
 

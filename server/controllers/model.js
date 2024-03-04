@@ -24,7 +24,6 @@ export const UpdateModelType= async (req, res) => {
     const userId = req.body.userId;
     const modelType = req.body.modelType;
     try {
-     
       await chat.saveModelType(userId, modelType);
   
       res.status(200).json({
